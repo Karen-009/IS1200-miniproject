@@ -42,5 +42,4 @@ const struct {
 
 Grid game_grid; // Global variable to hold the game grid
 
-// hej får du upp denna 
 
