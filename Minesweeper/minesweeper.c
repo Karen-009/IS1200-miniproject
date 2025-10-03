@@ -1,9 +1,12 @@
 # include <stdio.h>
+<<<<<<< HEAD
+#include <time.h>
+=======
 # include <stdlib.h>
 # include <math.h>
 # include <time.h>
 # include <stdbool.h>
-# include "system.h"
+>>>>>>> 59dfb70 (Added some general structs)
 
 typedef enum {
     EASY = 0,
@@ -37,4 +40,5 @@ const struct {
 };
 
 Grid game_grid; // Global variable to hold the game grid
+
 
