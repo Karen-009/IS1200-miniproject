@@ -13,17 +13,17 @@
 # define KEY1_base 0x40000df
 
 // Colors
-#define black     rgb_to_vga(0, 0, 0)
-#define white     rgb_to_vga(255, 255, 255)
-#define red       rgb_to_vga(255, 0, 0)
-#define green     rgb_to_vga(0, 255, 0)
-#define blue      rgb_to_vga(0, 0, 255)
-#define yellow    rgb_to_vga(255, 255, 0)
-#define cyan      rgb_to_vga(0, 255, 255)
-#define magenta   rgb_to_vga(255, 0, 255)
-#define gray      rgb_to_vga(128, 128, 128)
-#define dark_gray rgb_to_vga(64, 64, 64)
-#define light_blue rgb_to_vga(173, 216, 230)
+#define black     0x00
+#define white     0xFF
+#define red       0xE0
+#define green     0x1C
+#define blue      0x03
+#define yellow    0xFC
+#define cyan      0x1F
+#define magenta   0xE3
+#define gray      0x92
+#define dark_gray 0x49
+#define light_blue 0x9F
 
 // Game constants
 #define MAX_SIZE 20
@@ -46,3 +46,4 @@
 # define SW_reveal 8
 
 # define KEY_enter 0
+
