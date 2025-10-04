@@ -1,27 +1,10 @@
-<<<<<<< HEAD
 #include <math.h>
 #include <stdlib.h>
 #include "system.h"
 
 # include <time.h>
-=======
-<<<<<<< HEAD
-# include <stdio.h>
-# include <stdlib.h>
-# include <math.h>
-# include <time.h>
-# include <stdbool.h>
-=======
-# include <math.h>
-# include <stdlib.h>
-# include "system.h"
->>>>>>> 39ea9096b9f526b97150c5ff5c5d2098634f6e5a
->>>>>>> e15b2a071fc73780e563fc8f1fdfb55c74f5e0ac
 
-int count_adjacent_mines(int x, int y);
-void place_mine(int first_x, int first_y);
-void flood_fill(int x, int y);
-
+GameState game;
 
 //VGA Memory Addresses
 volatile char *VGA = (volatile char *) VGA_Buffer;
@@ -89,8 +72,8 @@ void setup_board(int first_x, int first_y){
     while (placed_mines_count < game.mine_count)
     {
         //Generates random locations for the mines within the board size
-        int x = rand() % game.board_size;
-        int y = rand() % game.board_size;
+        int x = my_rand() % game.board_size;
+        int y = my_rand() % game.board_size;
 
         if((x == first_x && y == first_y) || game.grid[x][y] == -1){
             continue; // Skip if it's the first click or already a mine
@@ -188,11 +171,11 @@ void draw_number(int grid_x, int grid_y, int number){
         case 8: color = cyan; break;
         default: color = gray;
     }
-    
+   
     for (int row = 0; row < 5; row++){
         for (int col = 0; col < 5; col++){
             if (is_pixel_set(digits_compact[number][row], col)){
-                draw_block(start_x + col * scale, start_y + 
+                draw_block(start_x + col * scale, start_y +
                             row * scale, scale, scale, color);
             }
         }
@@ -201,7 +184,7 @@ void draw_number(int grid_x, int grid_y, int number){
 
 void draw_cell(int x, int y, int cell_x, int cell_y){
     int cell_size = 20;
-    int pixel_x = cell_x * cell_size; 
+    int pixel_x = cell_x * cell_size;
     int pixel_y = cell_y * cell_size;
     if(game.revealed[cell_x][cell_y]){
         draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
@@ -228,7 +211,7 @@ void draw_cell(int x, int y, int cell_x, int cell_y){
             draw_pixel(pixel_x + i, pixel_y + cell_size - 1, dark_gray); // Bottom border
             draw_pixel(pixel_x + cell_size - 1, pixel_y + i, dark_gray); // Right border
         }
-    
+   
         if (game.flagged[cell_x][cell_y]){
             // Draw a simple flag (triangle on a pole)
             for (int i = 0; i < cell_size; i++){
@@ -250,7 +233,7 @@ void draw_cursor() {
     int cell_size = 20;
     int screen_x = game.cursor_x * cell_size;
     int screen_y = game.cursor_y * cell_size;
-    
+   
     // Draw yellow border around cursor cell
     for(int i = 0; i < cell_size; i++) {
         draw_pixel(screen_x + i, screen_y, yellow);
@@ -381,7 +364,7 @@ void process_action(int action){
 
     switch (action)
     {
-    case SW_flag: 
+    case SW_flag:
         flag(game.cursor_x, game.cursor_y);
         break;
     case SW_reveal:
@@ -391,7 +374,7 @@ void process_action(int action){
     check_win_condition();
 }
 
-void handel_input(){
+void handle_input(){
     int current_switches = *SWITCHES;
     int current_keys = *keys1;
 
@@ -442,3 +425,15 @@ void delay(int cycles){
     }
 }
 
+static int rand_seed = 1;
+
+void my_srand(int seed) {
+    rand_seed = seed;
+}
+
+int my_rand(void) {
+    rand_seed = rand_seed * 1664525 + 1013904223;
+    return (int)(rand_seed & 0x7FFFFFFF);
+}
+
+void handle_interrupt(void) {}

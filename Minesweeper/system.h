@@ -1,21 +1,15 @@
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
+# include <stdlib.h>
 
 // Memory Addresses
 #define VGA_Buffer 0x8000000
 #define VGA_DMA 0x4000100
 #define SWITCH_base 0x4000010
-#define KEY1_base 0x40000df
+#define KEY1_base 0x40000d0
 
 # define TIMER_base 0x4000020
 # define HEX_base 0x4000050
-# define KEY1_base 0x40000df
-
-// Memory Addresses
-#define VGA_Buffer 0x8000000
-#define VGA_DMA 0x4000100
-#define SWITCH_base 0x4000010
-#define KEY1_base 0x40000df
 
 // Colors
 #define black     0x00
@@ -70,9 +64,13 @@ void check_win_condition(void);
 int get_level(void);
 void move_cursor(int dx, int dy);
 void process_action(int action);
-void handel_input(void);
+void handle_input(void);
 void draw_game_over(void);
 void delay(int cycles);
+
+void handle_interrupt(void);
+int my_rand(void);
+void my_srand(int seed);
 
 //Game States
 typedef struct {
