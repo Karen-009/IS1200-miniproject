@@ -1,11 +1,6 @@
-# include <math.h>
-# include <stdlib.h>
-# include "system.h"
-
-int count_adjacent_mines(int x, int y);
-void place_mine(int first_x, int first_y);
-void flood_fill(int x, int y);
-
+#include <math.h>
+#include <stdlib.h>
+#include "system.h"
 
 //VGA Memory Addresses
 volatile char *VGA = (volatile char *) VGA_Buffer;
@@ -14,22 +9,6 @@ volatile int *VGA_ctrl = (volatile int*) VGA_DMA;
 //Switch and Key Memory Addresses
 volatile int *SWITCHES = (volatile int *) SWITCH_base;
 volatile int *keys1 = (volatile int *) KEY1_base; //address of KEY1
-
-//Game States
-typedef struct {
-    int grid[MAX_SIZE][MAX_SIZE];      // -1 = mine, 0-8 = adjacent mines
-    int revealed[MAX_SIZE][MAX_SIZE];  // 1 = cell is shown, 0 = hidden
-    int flagged[MAX_SIZE][MAX_SIZE];   // 1 = cell has flag, 0 = no flag
-    int board_size;                    // Current grid size (8, 12, or 16)
-    int mine_count;                    // Number of mines
-    int game_over;                     // 1 = lost, 0 = still playing
-    int game_won;                      // 1 = won, 0 = still playing
-    int first_click;                   // Special handling for first move
-    int cursor_x, cursor_y;            // Player's current position
-    int last_switches, last_keys;      // Previous input states
-} GameState;
-
-GameState game;
 
 // Compact digit representation using bits (5 bytes per digit)
 unsigned char digits_compact[10][5] = {
@@ -44,7 +23,7 @@ unsigned char digits_compact[10][5] = {
     {0x1F, 0x11, 0x1F, 0x11, 0x1F}, // 8
 };
 
-void init_game(int difficlty){
+void init_game(int dificulty){
     game.first_click = 1;
     game.game_over = 0;
     game.game_won = 0;
@@ -54,7 +33,7 @@ void init_game(int difficlty){
     game.last_keys = 0;
 
     // Set the board size and mine count based on difficulty
-    switch (difficlty){
+    switch (dificulty){
         case 0: //Level 1
             game.board_size = EASY_SIZE;
             game.mine_count = EASY_MINES;
@@ -136,7 +115,7 @@ void draw_pixel(int x, int y, char color){
 void draw_rect(int x, int y, int width, int height, char color){
     for (int i = 0; i < width; i++){
         for (int j = 0; j < height; j++){
-            draw_pixel(x, y, color);
+            draw_pixel(x + i, y + j, color);
         }
     }
 }
@@ -170,7 +149,7 @@ void draw_number(int grid_x, int grid_y, int number){
 
     //Center the number in the
     int offset_x = (draw_size - (5 * scale)) / 2;
-    int offset_y = (draw_size - (7 * scale)) / 2;
+    int offset_y = (draw_size - (5 * scale)) / 2;
 
     int start_x = pixel_x + offset_x;
     int start_y = pixel_y + offset_y;
@@ -265,7 +244,7 @@ void draw_board(){
 
     // Draw each cell
     for(int i = 0; i < game.board_size; i++){
-        for(int j = 0; game.board_size; j++){
+        for(int j = 0; j < game.board_size; j++){
             draw_cell(0, 0, i, j);
         }
     }
@@ -283,7 +262,7 @@ void reveal_cell(int x, int y){
 
     //PLace mines after the first click so the first click is not a mine
     if(game.first_click){
-        place_mine(x, y);
+        setup_board(x, y);
         game.first_click = 0;
     }
 
@@ -306,8 +285,9 @@ void flood_fill(int x, int y){
             int new_x = x + i;
             int new_y = y + j;
 
-            if(new_x >=0 && new_x < game.board_size && new_y >=0 && new_y < game.board_size && !game.revealed[new_x][new_y]){
+            if(new_x >=0 && new_x < game.board_size && new_y >=0 && new_y < game.board_size && !game.revealed[new_x][new_y] && !game.flagged[new_x][new_y]){
                 game.revealed[new_x][new_y] = 1;
+
                 if(game.grid[new_x][new_y] == 0){
                     flood_fill(new_x, new_y); // Recursively reveal adjacent cells
                 }
@@ -318,7 +298,7 @@ void flood_fill(int x, int y){
 
 void flag(int x, int y){
     if(!game.revealed[x][y]){
-        game.revealed[x][y] = !game.flagged[x][y];
+        game.flagged[x][y] = !game.flagged[x][y];
     }
 }
 
@@ -334,7 +314,7 @@ void check_win_condition(){
                 revealed_cells++;
             }
 
-            if (game.flagged[i][j] == -1 && game.grid[i][j]){
+            if (game.flagged[i][j] && game.grid[i][j] == -1){
                 correct_flaggs++;
             }
         }
@@ -440,3 +420,4 @@ void delay(int cycles){
         __asm volatile ("nop"); // No operation, just waste time
     }
 }
+
