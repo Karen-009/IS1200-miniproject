@@ -1,15 +1,23 @@
 Minesweeper Controls:
 
-Switch 1: up
+Switch 0: 
 
-Switch 2: down
+Switch 1: Level 1
 
-Switch 3: left
+Switch 2: Level 2
 
-Switch 4: right
+Switch 3: Level 3
 
-Switch 5: flag for bomb
+Switch 4: up
 
-Switch 6: open
+Switch 5: down
+
+Switch 6: right
+
+Switch 7: left
+
+Switch 8: flagg for mine
+
+Switch 9: reveal
 
 Key 1: enter
