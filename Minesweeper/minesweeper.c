@@ -1,12 +1,8 @@
 # include <stdio.h>
-<<<<<<< HEAD
-#include <time.h>
-=======
 # include <stdlib.h>
 # include <math.h>
 # include <time.h>
 # include <stdbool.h>
->>>>>>> 59dfb70 (Added some general structs)
 
 typedef enum {
     EASY = 0,
