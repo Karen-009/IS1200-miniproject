@@ -1,10 +1,77 @@
-#include "sudoku.h"
+#include "sudoku.h" 
 #include "sudoku_puzzles.h" // Include predefined puzzles, remove when using VGA
 #include <stdio.h> // For testing, remove when using VGA
 #include <stdlib.h> // For rand()
 #include <time.h> // For time tracking
 #include <string.h> // For memset (used to set a block of memory to a specific value, typically zero)
 
+// shuffle function to randomize puzzle selection
+void swap_rows(int grid[9][9], int row1, int row2) {  
+    for (int col = 0; col < 9; col++) {
+        int temp = grid[row1][col];
+        grid[row1][col] = grid[row2][col];
+        grid[row2][col] = temp; 
+    }
+}
+
+// Function to swap columns
+void swap_cols(int grid[9][9], int col1, int col2) { 
+    for (int row = 0; row < 9; row++) {
+        int temp = grid[row][col1];
+        grid[row][col1] = grid[row][col2];
+        grid[row][col2] = temp;
+    }
+}
+
+// Function to shuffle rows within each band (set of 3 rows)
+void shuffle_rows(int grid[9][9]) { 
+    for (int band = 0; band < 3; band++) {
+        int base = band * 3;
+        for (int i = 0; i < 3; i++) {
+            int j = rand() % 3;
+            swap_rows(grid, base + i, base + j);
+        }
+    }
+}
+
+// Function to shuffle columns within each stack (set of 3 columns)
+void shuffle_cols(int grid[9][9]) { 
+    for (int stack = 0; stack < 3; stack++) {
+        int base = stack * 3;
+        for (int i = 0; i < 3; i++) {
+            int j = rand() % 3;
+            swap_cols(grid, base + i, base + j);
+        }
+    }
+}
+
+// Function to permute numbers in the grid, maps 1-9 to a random permutation of 1-9
+void permute_numbers(int grid[9][9]) {
+    int map[10] = {0};
+    for (int i = 1; i <= 9; i++) map[i] = i;
+    for (int i = 1; i <= 9; i++) {
+        int j = 1 + rand() % 9;
+        int tmp = map[i];
+        map[i] = map[j];
+        map[j] = tmp;
+    }
+    for (int r = 0; r < 9; r++)
+        for (int c = 0; c < 9; c++)
+            grid[r][c] = map[grid[r][c]];
+}
+
+// Function to remove cells from the grid to create the difficulty level of the puzzle
+void remove_cells(int grid[9][9], int cells_to_remove) {
+    int removed = 0;
+    while (removed < cells_to_remove) {
+        int r = rand() % 9;
+        int c = rand() % 9;
+        if (grid[r][c] != 0) {
+            grid[r][c] = 0;
+            removed++;
+        }
+    }
+}
 
 // Function to initialize the Sudoku game
 void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
@@ -16,38 +83,36 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     game->selected_row = 0;     // Start with the first cell selected, top-left corner
     game->selected_col = 0;
 
-// Select a random puzzle based on difficulty
-    int num_puzzles;
+    srand(time(NULL)); // Seed the random number generator
+
+    int puzzle[9][9];   // Temporary puzzle grid
+    memcpy(puzzle, solved_grid, sizeof(solved_grid)); // Start with a solved grid
+    shuffle_rows(puzzle);   
+    shuffle_cols(puzzle);
+    permute_numbers(puzzle);
+
+    int cells_to_remove;    // Determine number of cells to remove based on difficulty
     if (difficulty == EASY) {
-        num_puzzles = NUM_EASY;
+        cells_to_remove = 35;
     } else if (difficulty == MEDIUM) {
-        num_puzzles = NUM_MEDIUM;
+        cells_to_remove = 45;
     } else {
-        num_puzzles = NUM_HARD;
+        cells_to_remove = 55;
     }
-    int puzzle_index = rand() % num_puzzles;
+    remove_cells(puzzle, cells_to_remove);  // Remove cells to create the puzzle
 
-// Pointer to the selected puzzle
-    const int (*selected_puzzle)[9][9]; 
-    if (difficulty == EASY) {  
-        selected_puzzle = &easy_puzzles[puzzle_index];
-    } else if (difficulty == MEDIUM) {
-        selected_puzzle = &medium_puzzles[puzzle_index];
-    } else {
-        selected_puzzle = &hard_puzzles[puzzle_index];
-    }
-
-// Initialize the game grid with the selected puzzle
-    for (int r = 0; r < SUDOKU_SIZE; r++) {
-        for (int c = 0; c < SUDOKU_SIZE; c++) {
-            int value = (*selected_puzzle)[r][c];
-            game->grid.cells[r][c].value = value;
-            if (value != 0) {
-                game->grid.cells[r][c].fixed = 1; // Mark as fixed if it's part of the initial puzzle
-            } else {
-                game->grid.cells[r][c].fixed = 0; // Not fixed, can be changed by the player
+    for (int r = 0; r < 9; r++) {   // Copy the puzzle into the game grid
+        for (int c = 0; c < 9; c++) {   // Set cell value and fixed status
+            int value = puzzle[r][c];   // 0 if empty
+            game->grid.cells[r][c].value = value;   // Set cell value
+            if (value != 0) {   // If the cell is part of the initial puzzle
+                game->grid.cells[r][c].fixed = 1;   // Mark as fixed
+            } else {    
+                game->grid.cells[r][c].fixed = 0;   // Else, mark as not fixed
             }
         }
     }
-}   
+}
+
+
 

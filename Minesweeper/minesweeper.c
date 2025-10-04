@@ -1,8 +1,22 @@
+<<<<<<< HEAD
 #include <math.h>
 #include <stdlib.h>
 #include "system.h"
 
 # include <time.h>
+=======
+<<<<<<< HEAD
+# include <stdio.h>
+# include <stdlib.h>
+# include <math.h>
+# include <time.h>
+# include <stdbool.h>
+=======
+# include <math.h>
+# include <stdlib.h>
+# include "system.h"
+>>>>>>> 39ea9096b9f526b97150c5ff5c5d2098634f6e5a
+>>>>>>> e15b2a071fc73780e563fc8f1fdfb55c74f5e0ac
 
 int count_adjacent_mines(int x, int y);
 void place_mine(int first_x, int first_y);
