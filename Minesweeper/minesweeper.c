@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include "system.h"
 
+# include <time.h>
+
+int count_adjacent_mines(int x, int y);
+void place_mine(int first_x, int first_y);
+void flood_fill(int x, int y);
+
+
 //VGA Memory Addresses
 volatile char *VGA = (volatile char *) VGA_Buffer;
 volatile int *VGA_ctrl = (volatile int*) VGA_DMA;
