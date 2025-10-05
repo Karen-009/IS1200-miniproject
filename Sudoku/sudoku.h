@@ -53,7 +53,7 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty);
 void sudoku_render(const SudokuGame *game);
 InputAction get_input(void);
 void sudoku_update(SudokuGame *game, InputAction action);
-int sudoku_check_win(const SudokuGame *game);
+int sudoku_check_win(SudokuGame *game);
 void sudoku_play(void);
 
 
