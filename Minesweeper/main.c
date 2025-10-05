@@ -24,9 +24,7 @@ int main() {
         }
        
         // Simple delay
-        for(int i = 0; i < 10000; i++) {
-            __asm volatile ("nop");
-        }
+        delay(1);
     }
    
     return 0;

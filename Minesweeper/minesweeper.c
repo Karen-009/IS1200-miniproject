@@ -383,27 +383,34 @@ void handle_input(){
     if(current_difficulty != last_difficulty){
         init_game(current_difficulty);
         last_difficulty = current_difficulty;
+        draw_board(); // Draw board immediatly after init
         return;
     }
 
-    //Check for movement inputs, if the switch is on and key1 is pressed
-    if((current_keys & (1 << KEY_enter)) && !(game.last_keys & (1 << KEY_enter))){
-        if((current_switches & (1 << SW_up)) && !(game.last_switches & (1 << SW_up))){
+    // Checks if key is pressed
+    if (current_keys & (1 << KEY_enter) && !(game.last_keys & (1 << KEY_enter))) {
+        if (current_switches & (1 << SW_up))
+        {
             move_cursor(0, -1);
         }
-        if((current_switches & (1 << SW_down)) && !(game.last_switches & (1 << SW_down))){
-            move_cursor(0, 1);
+        if (current_switches & (1 << SW_down))
+        {
+            move_cursor(0,1);
         }
-        if((current_switches & (1 << SW_left)) && !(game.last_switches & (1 << SW_left))){
-            move_cursor(-1, 0);
-        }
-        if((current_switches & (1 << SW_right)) && !(game.last_switches & (1 << SW_right))){
+        if (current_switches & (1 << SW_right))
+        {
             move_cursor(1, 0);
         }
-        if((current_switches & (1 << SW_flag)) && !(game.last_switches & (1 << SW_flag))){
+        if (current_switches & (1 << SW_left))
+        {
+            move_cursor(-1, 0);
+        }
+        if (current_switches & (1 << SW_flag))
+        {
             process_action(SW_flag);
         }
-        if((current_switches & (1 << SW_reveal)) && !(game.last_switches & (1 << SW_reveal))){
+        if (current_switches & (1 << SW_reveal))
+        {
             process_action(SW_reveal);
         }
     }
