@@ -9,7 +9,7 @@ volatile int *keys1 = (volatile int *) KEY1_base; //address of KEY1
 static int prev_switches = 0;  
 static int prev_keys = 0;   
 
-InputAction get_input_action(void) {
+InputAction get_input_vga(void) {
     int current_switches = *SWITCHES;
     int current_keys = *keys1;
 

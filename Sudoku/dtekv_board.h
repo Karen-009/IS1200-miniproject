@@ -9,21 +9,23 @@
 #define KEY1_base 0x40000d0
 #define TIMER_base 0x4000020
 #define HEX_base 0x4000050
+#define SWITCH_BASE 0x4000010  
+#define KEY1_BASE 0x40000d0
 
 // Colors 
 #define black     0x00
 #define white     0xFF
 #define red       0xE0
+#define yellow    0xFC
 #define green     0x1C
 #define blue      0x03
-#define yellow    0xFC
 #define cyan      0x1F
 #define magenta   0xE3
 #define gray      0x92
 #define dark_gray 0x49
 #define light_blue 0x9F
 #define orange    0xFC 
-#define light_gray 0xE4
+#define light_gray 0xE4 
 #define light_green 0x7C
 #define light_red 0xF4
 #define light_yellow 0xFE
@@ -34,11 +36,12 @@
 #define light_magenta 0xF3
 #define dark_blue 0x02
 #define dark_green 0x0C
+#define pastel_pink 0xF5 
 
 // Swich and Key Assignments
-#define SW_l1 0     // level 1 difficulty
-#define SW_l2 1    // level 2 difficulty
-#define SW_l3 2    // level 3 difficulty
+#define SW_l1 0     // easy difficulty
+#define SW_l2 1    // medium difficulty
+#define SW_l3 2    // hard  difficulty
 #define SW_up 3    // move cursor up
 #define SW_down 4  // move cursor down
 #define SW_right 5 // move cursor right
@@ -48,7 +51,6 @@
 #define SW_enter_digit 9 // enter digit mode
 #define KEY_enter 0 // confirm action
 #define KEY_exit 1  // exit game
-#define KEY_restart 2 // restart game
 
 
 #endif

@@ -3,6 +3,6 @@
 #include "sudoku.h" 
 
 // Function that reads  DTEKV switches and keys and returns the corresponding InputAction
-InputAction get_input_action(void);
+InputAction get_input_vga(void);
 
 #endif
