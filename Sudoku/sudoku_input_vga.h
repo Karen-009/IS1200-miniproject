@@ -1,7 +1,8 @@
-#ifndef SUDOKU_RENDER_VGA_C
-#define SUDOKU_RENDER_VGA_C
+#ifndef SUDOKU_INPUT_VGA_H
+#define SUDOKU_INPUT_VGA_H
 #include "sudoku.h" 
 
-void sudoku_render_vga(const SudokuGame *game);
+// Function that reads  DTEKV switches and keys and returns the corresponding InputAction
+InputAction get_input_action(void);
 
 #endif

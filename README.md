@@ -42,3 +42,26 @@ Swicth 9: Enter/cycle digit
 Key 1: Confirm (perform the action)
 
 Keep the control mapping the same for movement and main actions in both Sudoku and Minesweeper. For movement, the player toggles the switch (on/off), then presses KEY1 to perform the action. Game-specific buttons/switches are: SW8 and SW9. 
+
+- **Move Cursor:**  
+  - Turn ON the switch for the direction you want to move (UP: SW4, DOWN: SW5, RIGHT: SW6, LEFT: SW7).
+  - Press KEY1 to move.  
+  - Turn OFF the switch before moving in a new direction.
+
+- **Enter a Number (1–9):**  
+  - Move the cursor to your desired cell.
+  - Turn ON SW9 (cycle digit).
+  - Press KEY1 repeatedly until your chosen digit appears in the cell.
+  - The cell is set to that number immediately (no extra confirm needed).
+
+- **Erase a Cell:**  
+  - Move the cursor to your desired cell.
+  - Turn ON SW8 (erase).
+  - Press KEY1 to clear the cell.
+
+- **Select Difficulty (at game start):**  
+  - Turn ON SW1 (Level 1), SW2 (Level 2), or SW3 (Level 3).
+  - Press KEY1 to confirm.
+
+Always turn OFF the previous switch before turning ON a new one.  
+Only one movement or action switch should be ON when pressing KEY1.

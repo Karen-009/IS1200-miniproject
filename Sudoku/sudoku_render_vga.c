@@ -1,4 +1,5 @@
-#include "system.h"
+#include "dtekv_board.h"
+#include "sudoku_vga.h"
 
 // VGA Memory Addresses
 volatile char *VGA = (volatile char *) VGA_Buffer;

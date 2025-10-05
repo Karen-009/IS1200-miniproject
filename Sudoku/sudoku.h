@@ -31,8 +31,10 @@ typedef enum {  // Enum for input actions
     INPUT_DOWN, 
     INPUT_LEFT, 
     INPUT_RIGHT, 
-    INPUT_ENTER,
-    INPUT_EXIT, 
+    INPUT_INCREMENT, // Increment cell value (SW9)
+    INPUT_ERASE,     // Erase cell value (SW8)
+    INPUT_ENTER,   
+    INPUT_EXIT,
 } InputAction; 
 
 
@@ -46,15 +48,21 @@ typedef struct {
     GameState state; // Current game state
     double elapsed_time; // Time elapsed since the start of the game
     int difficulty; // Difficulty level, 0 = easy, 1 = medium, 2 = hard
+    int show_timer; // 1 if timer is shown on VGA, 0 otherwise
+    int score; // Calculate score to show on VGA 
 } SudokuGame;
 
-// Function prototypes
+// Logic functions
 void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty); 
-void sudoku_render(const SudokuGame *game);
-InputAction get_input(void);
 void sudoku_update(SudokuGame *game, InputAction action);
 int sudoku_check_win(SudokuGame *game);
 void sudoku_play(void);
+
+// VGA rendering function & input fot DTEKV board
+void sudoku_render_vga(const SudokuGame *game); // Draw grid, numbers, selection, timer, score on VGA 
+InputAction get_input_vga(void);    // Read switches and keys and map to InputAction
+
+// Debugging function to print the Sudoku grid to console
 void print_sudoku(SudokuGame *game);
 
 

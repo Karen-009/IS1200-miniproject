@@ -36,10 +36,19 @@
 #define dark_green 0x0C
 
 // Swich and Key Assignments
-
-
-
-
+#define SW_l1 0     // level 1 difficulty
+#define SW_l2 1    // level 2 difficulty
+#define SW_l3 2    // level 3 difficulty
+#define SW_up 3    // move cursor up
+#define SW_down 4  // move cursor down
+#define SW_right 5 // move cursor right
+#define SW_left 6  // move cursor left
+#define SW_flag 7  // toggle flag mode
+#define SW_ACTION_1 8 // (reveal/erase cell)
+#define SW_enter_digit 9 // enter digit mode
+#define KEY_enter 0 // confirm action
+#define KEY_exit 1  // exit game
+#define KEY_restart 2 // restart game
 
 
 #endif
