@@ -60,6 +60,7 @@ void permute_numbers(int grid[9][9]) {
             grid[r][c] = map[grid[r][c]];
 }
 
+
 // Function to remove cells from the grid to create the difficulty level of the puzzle
 void remove_cells(int grid[9][9], int cells_to_remove) {
     int removed = 0;
@@ -90,6 +91,7 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     shuffle_rows(puzzle);   
     shuffle_cols(puzzle);
     permute_numbers(puzzle);
+    memcpy (game->solution, puzzle, sizeof(puzzle)); // Save the solution before removing cells
 
     int cells_to_remove;    // Determine number of cells to remove based on difficulty
     if (difficulty == EASY) {
@@ -114,5 +116,83 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     }
 }
 
+// Returns 1 if board filled and valid, 0 otherwise
+// Allows multiple valid solution
+int sudoku_check_win(SudokuGame *game) {
+    int row, col;
+    int filled = 1;
 
+    // Check for completeness and duplicates in rows/columns
+    for (row = 0; row < SUDOKU_SIZE; row++) {
+        int row_seen[10] = {0};
+        int col_seen[10] = {0};
+
+        for (col = 0; col < SUDOKU_SIZE; col++) {
+            int val_row = game->grid.cells[row][col].value;
+            int val_col = game->grid.cells[col][row].value;
+
+            if (val_row == 0 || val_col == 0)
+                filled = 0;
+
+            if (val_row != 0) {
+                if (row_seen[val_row])
+                    goto invalid;
+                row_seen[val_row] = 1;
+            }
+            if (val_col != 0) {
+                if (col_seen[val_col])
+                    goto invalid;
+                col_seen[val_col] = 1;
+            }
+        }
+    }
+
+    // Check 3x3 boxes
+    for (int box_row = 0; box_row < 3; box_row++) {
+        for (int box_col = 0; box_col < 3; box_col++) {
+            int seen[10] = {0};
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 3; c++) {
+                    int val = game->grid.cells[box_row * 3 + r][box_col * 3 + c].value;
+                    if (val == 0)
+                        filled = 0;
+                    if (val != 0) {
+                        if (seen[val])
+                            goto invalid;
+                        seen[val] = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!filled)
+        return 0; // Still playing, not filled yet
+
+    // If filled and valid
+    game->state = GAME_WON;
+    return 1;
+
+invalid:
+    if (filled)
+        game->state = GAME_LOST; // Only set lost if board is fully filled
+    return 0;
+}
+
+
+// For testing purposes, prints the Sudoku grid to console
+void print_sudoku(SudokuGame *game) {
+    for (int r = 0; r < 9; r++) {
+        for (int c = 0; c < 9; c++) {
+            int v = game->grid.cells[r][c].value;
+            if (v == 0)
+                printf(". ");
+            else
+                printf("%d ", v);
+            if ((c + 1) % 3 == 0 && c != 8) printf("| ");
+        }
+        printf("\n");
+        if ((r + 1) % 3 == 0 && r != 8) printf("------+-------+------\n");
+    }
+}
 

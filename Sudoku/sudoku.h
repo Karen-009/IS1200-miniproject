@@ -38,6 +38,7 @@ typedef enum {  // Enum for input actions
 
 typedef struct {
     SudokuGrid grid; // The Sudoku grid
+    int solution[SUDOKU_SIZE][SUDOKU_SIZE]; // The solution grid for validation
     int selected_row; // Currently selected row
     int selected_col; // Currently selected column
     time_t start_time; // Time when the game started
@@ -54,5 +55,6 @@ InputAction get_input(void);
 void sudoku_update(SudokuGame *game, InputAction action);
 int sudoku_check_win(const SudokuGame *game);
 void sudoku_play(void);
+
 
 #endif 
