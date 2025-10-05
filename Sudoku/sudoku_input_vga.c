@@ -30,5 +30,11 @@ InputAction get_input_action(void) {
     prev_switches = current_switches;
     prev_keys = current_keys;
 
-    return action;
+    // Ensure the action is valid before returning
+    if (action != INPUT_NONE) {
+        return action;
+    }
+
+    // Default to INPUT_NONE if no valid action is detected
+    return INPUT_NONE;
 }
