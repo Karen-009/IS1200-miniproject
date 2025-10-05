@@ -55,6 +55,7 @@ InputAction get_input(void);
 void sudoku_update(SudokuGame *game, InputAction action);
 int sudoku_check_win(SudokuGame *game);
 void sudoku_play(void);
+void print_sudoku(SudokuGame *game);
 
 
 #endif 

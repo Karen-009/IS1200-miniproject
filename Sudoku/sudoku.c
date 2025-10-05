@@ -116,34 +116,41 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     }
 }
 
-// Returns 1 if board filled and valid, 0 otherwise
-// Allows multiple valid solution
+// Function to check if the player has won or lost
 int sudoku_check_win(SudokuGame *game) {
     int row, col;
     int filled = 1;
 
-    // Check for completeness and duplicates in rows/columns
+    // First, check if the board is completely filled
+    for (row = 0; row < SUDOKU_SIZE; row++) {
+        for (col = 0; col < SUDOKU_SIZE; col++) {
+            if (game->grid.cells[row][col].value == 0) {
+                filled = 0;
+                break;
+            }
+        }
+        if (!filled) break;
+    }
+
+    // If board is not full, just keep playing
+    if (!filled) {
+        return 0;
+    }
+
+    // Board is full → now check rows, columns, and boxes for validity
     for (row = 0; row < SUDOKU_SIZE; row++) {
         int row_seen[10] = {0};
         int col_seen[10] = {0};
-
         for (col = 0; col < SUDOKU_SIZE; col++) {
             int val_row = game->grid.cells[row][col].value;
             int val_col = game->grid.cells[col][row].value;
 
-            if (val_row == 0 || val_col == 0)
-                filled = 0;
-
-            if (val_row != 0) {
-                if (row_seen[val_row])
-                    goto invalid;
-                row_seen[val_row] = 1;
+            if (row_seen[val_row] || col_seen[val_col]) {
+                game->state = GAME_LOST;
+                return 0;
             }
-            if (val_col != 0) {
-                if (col_seen[val_col])
-                    goto invalid;
-                col_seen[val_col] = 1;
-            }
+            row_seen[val_row] = 1;
+            col_seen[val_col] = 1;
         }
     }
 
@@ -153,32 +160,21 @@ int sudoku_check_win(SudokuGame *game) {
             int seen[10] = {0};
             for (int r = 0; r < 3; r++) {
                 for (int c = 0; c < 3; c++) {
-                    int val = game->grid.cells[box_row * 3 + r][box_col * 3 + c].value;
-                    if (val == 0)
-                        filled = 0;
-                    if (val != 0) {
-                        if (seen[val])
-                            goto invalid;
-                        seen[val] = 1;
+                    int val = game->grid.cells[box_row*3+r][box_col*3+c].value;
+                    if (seen[val]) {
+                        game->state = GAME_LOST;
+                        return 0;
                     }
+                    seen[val] = 1;
                 }
             }
         }
     }
 
-    if (!filled)
-        return 0; // Still playing, not filled yet
-
-    // If filled and valid
+    // If we reach here, board is full and valid
     game->state = GAME_WON;
     return 1;
-
-invalid:
-    if (filled)
-        game->state = GAME_LOST; // Only set lost if board is fully filled
-    return 0;
 }
-
 
 // For testing purposes, prints the Sudoku grid to console
 void print_sudoku(SudokuGame *game) {
