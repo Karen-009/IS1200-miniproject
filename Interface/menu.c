@@ -1,18 +1,20 @@
 #include "main_menu.h"
 #include "minesweeper.h"
-// #include "sudoku.h"  // Uncomment when you have Sudoku header
+#include "dtekv_board.h"  // Uncomment when you have Sudoku header
+#include "sudoku_input_vga.h"
+#include "sudoku_puzzles.h"
+#include "sudoku_vga.h"
+#include"sudoku.h"
 
-// VGA Memory Addresses (reusing from minesweeper)
 volatile char *VGA = (volatile char *) VGA_Buffer;
 volatile int *VGA_ctrl = (volatile int*) VGA_DMA;
-
-// Switch and Key Memory Addresses (reusing from minesweeper)
 volatile int *SWITCHES = (volatile int *) SWITCH_base;
 volatile int *keys1 = (volatile int *) KEY1_base;
 
 int menu_state = MENU_STATE_MAIN;
 int game_selection = MENU_MINEWEEPER;
 
+//Initliazlised menu statment
 void init_main_menu(void) {
     menu_state = MENU_STATE_MAIN;
     game_selection = MENU_MINEWEEPER;
@@ -23,7 +25,6 @@ void draw_main_menu(int selection) {
     draw_rect(0, 0, 320, 240, light_blue);
     
     // Draw title
-    // Simple text drawing using rectangles (you can enhance this)
     char* title = "SELECT GAME";
     int title_x = 120;
     int title_y = 50;
@@ -103,16 +104,9 @@ void run_minesweeper(void) {
         if(current_state != last_state) {
             draw_board();
             if(game.game_over || game.game_won) {
-                draw_game_over();
+                draw_gameover();
             }
             last_state = current_state;
-        }
-        
-        // Check for return to menu (you can define a key combination for this)
-        int current_keys = *keys1;
-        if (current_keys & (1 << 3)) {  // Use KEY3 to return to menu
-            menu_state = MENU_STATE_MAIN;
-            break;
         }
         
         delay(1);
@@ -123,24 +117,37 @@ void run_sudoku(void) {
     // Initialize and run sudoku game
     // This function will call your Sudoku game's main logic
     // For now, just display a placeholder
-    
-    draw_rect(0, 0, 320, 240, green);
-    draw_rect(100, 100, 120, 40, white);
-    
-    // Simple "Sudoku" text
-    int text_x = 110;
-    int text_y = 110;
-    for(int i = 0; i < 6; i++) {
-        draw_block(text_x + i*12, text_y, 10, 12, black);
-    }
-    
-    // Wait for return to menu
+     SudokuGame game;
+
+    SudokuDifficulty difficulty = get_selected_difficulty();
     while(1) {
-        int current_keys = *keys1;
-        if (current_keys & (1 << 3)) {  // Use KEY3 to return to menu
-            menu_state = MENU_STATE_MAIN;
-            break;
-        }
-        delay(1);
+        difficulty = get_selected_difficulty();
+        sudoku_render_vga(&game); // Initial render before starting
+        volatile int *keys1 = (volatile int *) KEY1_base; //address of KEY1
+        if (*keys1 & 0x1)   // If KEY0 is pressed, start the game
+            break; // Exit loop to start game
     }
+
+    sudoku_init(&game, difficulty); // Initialize game with selected difficulty
+
+    while (1) {
+        sudoku_render_vga(&game); // Draw current game state
+
+        if (game.state == GAME_WON || game.state == GAME_LOST) {
+                // Wait for KEY1 to restart (and go back to difficulty select)
+                volatile int *keys1 = (volatile int *)KEY1_base;
+                while (!(*keys1 & 0x1)) {
+                    sudoku_render_vga(&game);
+                }
+                while (*keys1 & 0x1); // Debounce
+                break; // Exit loop to select difficulty again
+            }
+
+            InputAction action = get_input_vga();
+            if (action != INPUT_NONE) {
+                sudoku_update(&game, action);
+                sudoku_check_win(&game);
+        }
+    }
+    return 0;
 }

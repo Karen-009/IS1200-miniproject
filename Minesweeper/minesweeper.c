@@ -418,7 +418,7 @@ void handle_input(){
     game.last_keys = current_keys;
 }
 
-void draw_game_over(){
+void draw_gameover(){
     if (game.game_over){
         draw_rect(80, 200, 160, 80, red);
     } else if (game.game_won){

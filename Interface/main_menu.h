@@ -3,6 +3,12 @@
 
 #include "minesweeper.h"
 // #include "sudoku.h"
+#include "dtekv_board.h"  // Uncomment when you have Sudoku header
+#include "sudoku_input_vga.h"
+#include "sudoku_puzzles.h"
+#include "sudoku_vga.h"
+#include"sudoku.h"
+
 
 // Menu states
 #define MENU_STATE_MAIN 0

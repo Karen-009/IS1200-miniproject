@@ -18,7 +18,7 @@ int main() {
         if(current_state != last_state) {
             draw_board();
             if(game.game_over || game.game_won) {
-                draw_game_over();
+                draw_gameover();
             }
             last_state = current_state;
         }
