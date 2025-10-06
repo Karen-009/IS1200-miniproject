@@ -151,3 +151,13 @@ void run_sudoku(void) {
     }
     return 0;
 }
+
+SudokuDifficulty get_selected_difficulty(void) {
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;
+    int switches = *SWITCHES;
+
+    if (switches & (1 << SW_l3)) return HARD;
+    if (switches & (1 << SW_l2)) return MEDIUM;
+    if (switches & (1 << SW_l1)) return EASY;
+    return EASY; // Default to EASY if no switch is set
+}
