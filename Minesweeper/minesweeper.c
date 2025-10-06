@@ -406,13 +406,13 @@ void handle_input(){
         {
             move_cursor(-1, 0);
         }
-        if (current_switches & (1 << SW_flag))
+        if (current_switches & (1 << SW_ACTION_1))
         {
-            process_action(SW_flag);
+            process_action(SW_ACTION_1);
         }
-        if (current_switches & (1 << SW_reveal))
+        if (current_switches & (1 << SW_ACTION_2))
         {
-            process_action(SW_reveal);
+            process_action(SW_ACTION_2);
         }
     }
     game.last_switches = current_switches;
