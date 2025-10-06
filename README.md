@@ -1,6 +1,6 @@
 Minesweeper Controls:
 
-Switch 0: 
+Switch 0: Exit game, go to main menu
 
 Switch 1: Level 1
 
