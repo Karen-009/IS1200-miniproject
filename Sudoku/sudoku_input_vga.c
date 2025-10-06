@@ -17,15 +17,15 @@ InputAction get_input_vga(void) {
 
     int key1_pressed = (current_keys & (1 << KEY_enter)) && !(prev_keys & (1 << KEY_enter));
 
-    if (key1_pressed) {
-        if (current_switches & (1 << SW_up))       action = INPUT_UP;
-        else if (current_switches & (1 << SW_down))  action = INPUT_DOWN;
-        else if (current_switches & (1 << SW_right)) action = INPUT_RIGHT;
-        else if (current_switches & (1 << SW_left))  action = INPUT_LEFT;
-        else if (current_switches & (1 << SW_ACTION_1))      action = INPUT_ERASE;
-        else if (current_switches & (1 << SW_enter_digit))      action = INPUT_INCREMENT;
-        else                                     action = INPUT_ENTER; // Default: plain enter
-    }
+   if (key1_pressed) {
+    if (current_switches & (1 << SW_up))        action = INPUT_UP;        // Switch 4
+    else if (current_switches & (1 << SW_down)) action = INPUT_DOWN;      // Switch 5
+    else if (current_switches & (1 << SW_right))action = INPUT_RIGHT;     // Switch 6
+    else if (current_switches & (1 << SW_left)) action = INPUT_LEFT;      // Switch 7
+    else if (current_switches & (1 << SW_ACTION_1)) action = INPUT_ERASE; // Switch 8
+    else if (current_switches & (1 << SW_enter_digit)) action = INPUT_INCREMENT; // Switch 9
+    else                                     action = INPUT_ENTER;        // Default: plain enter
+}
 
     prev_switches = current_switches;
     prev_keys = current_keys;

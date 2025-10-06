@@ -3,49 +3,63 @@
 #include "sudoku_vga.h"
 #include "sudoku_input_vga.h"
 
-// Get selected difficulty based on switch positions 
+// Get selected difficulty based on switch positions (Switch 1–3)
 SudokuDifficulty get_selected_difficulty(void) {
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
     int switches = *SWITCHES;
 
-    if (switches & (1 << SW_l3)) return HARD;
-    if (switches & (1 << SW_l2)) return MEDIUM;
-    if (switches & (1 << SW_l1)) return EASY;
-    return EASY; // Default to EASY if no switch is set
+    if (switches & (1 << 3)) return HARD;    // Switch 3
+    if (switches & (1 << 2)) return MEDIUM;  // Switch 2
+    if (switches & (1 << 1)) return EASY;    // Switch 1
+    return EASY; // Default if no switch is set
 }
 
 int main(void) {
     SudokuGame game;
 
-    SudokuDifficulty difficulty = get_selected_difficulty();
-    while(1) {
-        difficulty = get_selected_difficulty();
-        sudoku_render_vga(&game); // Initial render before starting
-        volatile int *keys1 = (volatile int *) KEY1_base; //address of KEY1
-        if (*keys1 & 0x1)   // If KEY0 is pressed, start the game
-            break; // Exit loop to start game
+    while (1) {
+        // --- Difficulty selection loop ---
+        SudokuDifficulty difficulty = get_selected_difficulty();
+        sudoku_render_vga(&game); // Show initial empty board with difficulty info
+
+        volatile int *keys1 = (volatile int *) KEY1_base;
+        // Wait until KEY1 (confirm) is pressed to start
+        if (*keys1 & (1 << KEY_enter)) {
+            // Debounce KEY1
+            while (*keys1 & (1 << KEY_enter));
+            break; // Start the game
+        }
     }
 
-    sudoku_init(&game, difficulty); // Initialize game with selected difficulty
+    // Initialize the game with selected difficulty
+    sudoku_init(&game, get_selected_difficulty());
 
+    // --- Main game loop ---
     while (1) {
         sudoku_render_vga(&game); // Draw current game state
 
-        if (game.state == GAME_WON || game.state == GAME_LOST) {
-                // Wait for KEY1 to restart (and go back to difficulty select)
-                volatile int *keys1 = (volatile int *)KEY1_base;
-                while (!(*keys1 & 0x1)) {
-                    sudoku_render_vga(&game);
-                }
-                while (*keys1 & 0x1); // Debounce
-                break; // Exit loop to select difficulty again
-            }
+        // Get input from switches + KEY1
+        InputAction action = get_input_vga();
 
-            InputAction action = get_input_vga();
-            if (action != INPUT_NONE) {
-                sudoku_update(&game, action);
-                sudoku_check_win(&game);
+        // Exit to menu if exit key is pressed
+        if (action == INPUT_EXIT) {
+            break; // Return to main menu
+        }
+
+        if (action != INPUT_NONE) {
+            sudoku_update(&game, action);  // Apply player action
+            sudoku_check_win(&game);       // Check if game is won
+        }
+
+        // If game is finished, wait for KEY1 to restart
+        if (game.state == GAME_WON || game.state == GAME_LOST) {
+            while (!(*((volatile int *)KEY1_base) & (1 << KEY_enter))) {
+                sudoku_render_vga(&game); // Keep showing final state
+            }
+            while (*((volatile int *)KEY1_base) & (1 << KEY_enter)); // Debounce
+            break; // Exit to difficulty select
         }
     }
+
     return 0;
 }

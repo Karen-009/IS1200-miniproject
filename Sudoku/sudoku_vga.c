@@ -209,5 +209,3 @@ void sudoku_render_vga(const SudokuGame *game) {
     *VGA_ctrl = 1; // Start DMA transfer
 }
 
-void handle_interrupt(void) {}
-

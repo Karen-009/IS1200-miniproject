@@ -6,7 +6,6 @@
 #define VGA_DMA 0x4000100
 #define SWITCH_base 0x4000010
 #define KEY1_base 0x40000d0
-
 # define TIMER_base 0x4000020
 # define HEX_base 0x4000050
 

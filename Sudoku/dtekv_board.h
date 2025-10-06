@@ -10,7 +10,6 @@
 #define TIMER_base 0x4000020
 #define HEX_base 0x4000050
 #define SWITCH_BASE 0x4000010  
-#define KEY1_BASE 0x40000d0
 
 // Colors 
 #define black     0x00
