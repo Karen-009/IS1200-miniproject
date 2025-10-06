@@ -3,6 +3,11 @@
 # include <time.h>
 # include <string.h>
 
+void init_game(int difficulty);
+void draw_board(void);
+void handle_input(void);
+void draw_game_over(void);
+void delay(int cycles);
 
 int main() {
     init_game(0);
@@ -19,7 +24,7 @@ int main() {
         if(current_state != last_state) {
             draw_board();
             if(game.game_over || game.game_won) {
-                draw_game_over();
+                draw_gameover();
             }
             last_state = current_state;
         }
