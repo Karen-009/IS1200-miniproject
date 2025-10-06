@@ -65,5 +65,7 @@ InputAction get_input_vga(void);    // Read switches and keys and map to InputAc
 // Debugging function to print the Sudoku grid to console
 void print_sudoku(SudokuGame *game);
 
+void handle_interrupt(void);
+
 
 #endif 
