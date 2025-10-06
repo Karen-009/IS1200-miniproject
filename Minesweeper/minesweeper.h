@@ -1,6 +1,5 @@
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
-# include <stdlib.h>
 
 // Memory Addresses
 #define VGA_Buffer 0x8000000
@@ -34,15 +33,15 @@
 #define HARD_MINES 80
 
 // Switch and Key Assignments
-#define SW_l1 0
-#define SW_l2 1
-#define SW_l3 2
-#define SW_up 3
-#define SW_down 4
-#define SW_right 5
-#define SW_left 6
-#define SW_flag 7
-#define SW_reveal 8
+#define SW_l1 1
+#define SW_l2 2
+#define SW_l3 3
+#define SW_up 4
+#define SW_down 5
+#define SW_right 6
+#define SW_left 7
+#define SW_flag 8
+#define SW_reveal 9
 #define KEY_enter 0
 
 // Function declarations

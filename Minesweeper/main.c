@@ -1,4 +1,4 @@
-# include "system.h"
+# include "minesweeper.h"
 # include <stdio.h>
 # include <time.h>
 # include <string.h>
