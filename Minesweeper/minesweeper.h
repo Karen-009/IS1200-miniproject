@@ -1,27 +1,6 @@
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
 
-// Memory Addresses
-#define VGA_Buffer 0x8000000
-#define VGA_DMA 0x4000100
-#define SWITCH_base 0x4000010
-#define KEY1_base 0x40000d0
-# define TIMER_base 0x4000020
-# define HEX_base 0x4000050
-
-// Colors
-#define black     0x00
-#define white     0xFF
-#define red       0xE0
-#define green     0x1C
-#define blue      0x03
-#define yellow    0xFC
-#define cyan      0x1F
-#define magenta   0xE3
-#define gray      0x92
-#define dark_gray 0x49
-#define light_blue 0x9F
-
 // Game constants
 #define MAX_SIZE 20
 #define EASY_SIZE 8
@@ -31,17 +10,6 @@
 #define MEDIUM_MINES 35
 #define HARD_MINES 80
 
-// Switch and Key Assignments
-#define SW_l1 1
-#define SW_l2 2
-#define SW_l3 3
-#define SW_up 4
-#define SW_down 5
-#define SW_right 6
-#define SW_left 7
-#define SW_flag 8
-#define SW_reveal 9
-#define KEY_enter 0
 
 // Function declarations
 void init_game(int difficulty);

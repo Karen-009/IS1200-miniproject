@@ -23,7 +23,7 @@ InputAction get_input_vga(void) {
     else if (current_switches & (1 << SW_right))action = INPUT_RIGHT;     // Switch 6
     else if (current_switches & (1 << SW_left)) action = INPUT_LEFT;      // Switch 7
     else if (current_switches & (1 << SW_ACTION_1)) action = INPUT_ERASE; // Switch 8
-    else if (current_switches & (1 << SW_enter_digit)) action = INPUT_INCREMENT; // Switch 9
+    else if (current_switches & (1 << SW_ACTION_2)) action = INPUT_INCREMENT; // Switch 9
     else                                     action = INPUT_ENTER;        // Default: plain enter
 }
 

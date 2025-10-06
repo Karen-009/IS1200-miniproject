@@ -3,6 +3,7 @@
 #include "sudoku_vga.h"
 #include "sudoku_input_vga.h"
 
+// ---------------------------
 // Get selected difficulty based on switch positions (Switch 1–3)
 SudokuDifficulty get_selected_difficulty(void) {
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
@@ -13,14 +14,16 @@ SudokuDifficulty get_selected_difficulty(void) {
     if (switches & (1 << 1)) return EASY;    // Switch 1
     return EASY; // Default if no switch is set
 }
+// ---------------------------
 
 int main(void) {
     SudokuGame game;
+    SudokuDifficulty difficulty;  // store player selection
 
+    // --- Difficulty selection loop ---
     while (1) {
-        // --- Difficulty selection loop ---
-        SudokuDifficulty difficulty = get_selected_difficulty();
-        sudoku_render_vga(&game); // Show initial empty board with difficulty info
+        difficulty = get_selected_difficulty(); // store selection
+        sudoku_render_vga(&game);              // Show empty board + difficulty info
 
         volatile int *keys1 = (volatile int *) KEY1_base;
         // Wait until KEY1 (confirm) is pressed to start
@@ -32,7 +35,7 @@ int main(void) {
     }
 
     // Initialize the game with selected difficulty
-    sudoku_init(&game, get_selected_difficulty());
+    sudoku_init(&game, difficulty); // <-- use variable here
 
     // --- Main game loop ---
     while (1) {

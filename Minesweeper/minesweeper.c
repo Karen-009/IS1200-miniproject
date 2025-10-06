@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "minesweeper.h"
+#include "dtekv_board.h"
 
 # include <time.h>
 
@@ -364,10 +365,10 @@ void process_action(int action){
 
     switch (action)
     {
-    case SW_flag:
+    case SW_ACTION_1:
         flag(game.cursor_x, game.cursor_y);
         break;
-    case SW_reveal:
+    case SW_ACTION_2:
         reveal_cell(game.cursor_x, game.cursor_y);
         break;
     }
