@@ -1,6 +1,6 @@
 // Contains VGA drawing functions - how to draw the board, numbers, highlights, cursor, timer, end game screens etc. 
 
-#include "dtekv_board.h"   
+#include "dtekv_board.h" 
 #include "sudoku_vga.h"
 #include "sudoku.h"
 
