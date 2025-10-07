@@ -81,7 +81,7 @@ void draw_digit(int grid_x, int grid_y, int number, char color) {
 
     for (int row = 0; row < 5; row++) {
         for (int col = 0; col < 5; col++) {
-            if ((digits_compact[number][row] >> (4 - col)) & 1) {
+            if ((digits_compact[number][row] >> (col)) & 1) {
                 // 3x3 block per "pixel"
                 for(int dx=0; dx<3; dx++)
                     for(int dy=0; dy<3; dy++)
