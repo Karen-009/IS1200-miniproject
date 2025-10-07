@@ -45,9 +45,9 @@ void draw_block(int x, int y, int width, int height, char color) {
 // Get background color for a 3x3 box based on its position
 char get_box_color(int box_row, int box_col) {
     char box_colors[3][3] = {
-        {pastel_pink, light_blue, light_yellow},
-        {light_yellow, pastel_pink, light_blue},
-        {light_blue, light_yellow, pastel_pink}
+        {light_pink, pastel_green, pastel_purple},
+        {pastel_green, light_pink, pastel_green},
+        {pastel_purple, pastel_green, light_pink}
     };
     return box_colors[box_row][box_col];
 }
