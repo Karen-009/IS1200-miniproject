@@ -377,16 +377,24 @@ void reveal_cell(int x, int y){
 }
 
 void flood_fill(int x, int y){
-    for(int i = -1; i <= 1; i++){
-        for(int j = -1; j <= 1; j++){
-            int new_x = x + i;
-            int new_y = y + j;
-
-            if(new_x >=0 && new_x < game.board_size && new_y >=0 && new_y < game.board_size && !game.revealed[new_x][new_y] && !game.flagged[new_x][new_y]){
-                game.revealed[new_x][new_y] = 1;
-
-                if(game.grid[new_x][new_y] == 0){
-                    flood_fill(new_x, new_y); // Recursively reveal adjacent cells
+    // Robust iterative flood fill (BFS) with overflow protection
+    typedef struct { int x, y; } Point;
+    Point queue[MAX_SIZE * MAX_SIZE];
+    int front = 0, back = 0;
+    queue[back++] = (Point){x, y};
+    while (front < back) {
+        if (back >= MAX_SIZE * MAX_SIZE) break; // Prevent overflow
+        Point p = queue[front++];
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                int nx = p.x + dx, ny = p.y + dy;
+                if (nx >= 0 && nx < game.board_size && ny >= 0 && ny < game.board_size) {
+                    if (!game.revealed[nx][ny] && !game.flagged[nx][ny]) {
+                        game.revealed[nx][ny] = 1;
+                        if (game.grid[nx][ny] == 0) {
+                            queue[back++] = (Point){nx, ny};
+                        }
+                    }
                 }
             }
         }
@@ -400,24 +408,13 @@ void flag(int x, int y){
 }
 
 void check_win_condition(){
-    int correct_flaggs = 0;
-    int total_cells = game.board_size * game.board_size;
     int revealed_cells = 0;
-
-    //Going though all of the cells to count the number of revealed cells and correct flaggs
     for(int i = 0; i < game.board_size; i++){
         for(int j = 0; j < game.board_size; j++){
-            if(game.revealed[i][j]){
-                revealed_cells++;
-            }
-
-            if (game.flagged[i][j] && game.grid[i][j] == -1){
-                correct_flaggs++;
-            }
+            if(game.revealed[i][j]) revealed_cells++;
         }
     }
-
-    if(correct_flaggs == game.mine_count || revealed_cells == total_cells - game.mine_count){
+    if(revealed_cells == game.board_size * game.board_size - game.mine_count){
         game.game_won = 1;
     }
 }
@@ -470,43 +467,27 @@ void process_action(int action){
 void handle_input(){
     int current_switches = *SWITCHES;
     int current_keys = *keys1;
-
     static int last_difficulty = -1;
+    static int last_keys = 0;
     int current_difficulty = get_level();
     if(current_difficulty != last_difficulty){
         init_game(current_difficulty);
         last_difficulty = current_difficulty;
-        draw_board(); // Draw board immediatly after init
+        draw_board();
         return;
     }
-
-    // Checks if key is pressed
-    if (current_keys & (1 << KEY_enter) && !(game.last_keys & (1 << KEY_enter))) {
-        if (current_switches & (1 << SW_up))
-        {
-            move_cursor(0, -1);
-        }
-        if (current_switches & (1 << SW_down))
-        {
-            move_cursor(0,1);
-        }
-        if (current_switches & (1 << SW_right))
-        {
-            move_cursor(1, 0);
-        }
-        if (current_switches & (1 << SW_left))
-        {
-            move_cursor(-1, 0);
-        }
-        if (current_switches & (1 << SW_ACTION_1))
-        {
-            process_action(SW_ACTION_1);
-        }
-        if (current_switches & (1 << SW_ACTION_2))
-        {
-            process_action(SW_ACTION_2);
-        }
+    // Debounce KEY_enter (active-low: pressed==0)
+    int key_pressed = !(current_keys & (1 << KEY_enter));
+    int key_was_pressed = !(last_keys & (1 << KEY_enter));
+    if (key_pressed && !key_was_pressed) {
+        if (current_switches & (1 << SW_up)) move_cursor(0, -1);
+        if (current_switches & (1 << SW_down)) move_cursor(0, 1);
+        if (current_switches & (1 << SW_right)) move_cursor(1, 0);
+        if (current_switches & (1 << SW_left)) move_cursor(-1, 0);
+        if (current_switches & (1 << SW_ACTION_1)) process_action(SW_ACTION_1);
+        if (current_switches & (1 << SW_ACTION_2)) process_action(SW_ACTION_2);
     }
+    last_keys = current_keys;
     game.last_switches = current_switches;
     game.last_keys = current_keys;
 }
