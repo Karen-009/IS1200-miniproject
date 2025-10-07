@@ -184,12 +184,14 @@ void draw_number(int grid_x, int grid_y, int number){
     }
 }
 
-void draw_cell(int x, int y, int cell_x, int cell_y){
+void draw_cell(int cell_x, int cell_y){
     int cell_size = 20;
     int pixel_x = cell_x * cell_size;
     int pixel_y = cell_y * cell_size;
+
     if(game.revealed[cell_x][cell_y]){
         draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
+        
         // If the cell contains a mine drawa circle in the center
         if (game.grid[cell_x][cell_y] == -1){
             for (int i = 0; i < cell_size; i++){
@@ -251,7 +253,7 @@ void draw_board(){
     // Draw each cell
     for(int i = 0; i < game.board_size; i++){
         for(int j = 0; j < game.board_size; j++){
-            draw_cell(0, 0, i, j);
+            draw_cell(i, j);
         }
     }
     draw_cursor(); // Draw the cursor on top

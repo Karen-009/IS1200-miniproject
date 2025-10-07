@@ -20,7 +20,7 @@ void draw_pixel(int x, int y, char color);
 void draw_rect(int x, int y, int width, int height, char color);
 void draw_block(int x, int y, int width, int height, char color);
 void draw_number(int grid_x, int grid_y, int number);
-void draw_cell(int x, int y, int cell_x, int cell_y);
+void draw_cell(int cell_x, int cell_y);
 void draw_cursor(void);
 void draw_board(void);
 void reveal_cell(int x, int y);
