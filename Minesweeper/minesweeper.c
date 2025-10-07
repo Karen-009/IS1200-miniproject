@@ -38,6 +38,8 @@ void init_game(int dificulty){
     game.last_switches = 0;
     game.last_keys = 0;
 
+    my_srand((int)time(NULL));
+    
     // Set the board size and mine count based on difficulty
     switch (dificulty){
         case 0: //Level 1
