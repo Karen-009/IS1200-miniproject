@@ -37,8 +37,6 @@ void init_game(int dificulty){
     game.cursor_y = 0;
     game.last_switches = 0;
     game.last_keys = 0;
-
-    my_srand((int)time(NULL));
     
     // Set the board size and mine count based on difficulty
     switch (dificulty){
@@ -165,7 +163,7 @@ void draw_digit(int grid_x, int grid_y, int number, char color) {
     }
 }
 
-void draw_cell(int x, int y, int cell_x, int cell_y){
+void draw_cell(int cell_x, int cell_y){
     int cell_size = 20;
     int pixel_x = cell_x * cell_size;
     int pixel_y = cell_y * cell_size;
@@ -344,7 +342,7 @@ void draw_board(){
     // Draw each cell
     for(int i = 0; i < game.board_size; i++){
         for(int j = 0; j < game.board_size; j++){
-            draw_cell(0, 0, i, j);
+            draw_cell(i, j);
         }
     }
     draw_cursor(); // Draw the cursor on top
