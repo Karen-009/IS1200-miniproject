@@ -141,6 +141,94 @@ int is_pixel_set(unsigned char row, int bit_pos){
     return (row >> (4 - bit_pos)) & 1;
 }
 
+void draw_digit(int grid_x, int grid_y, int number, char color) {
+    if(number < 0 || number > 8) return; // Minesweeper uses 0-8 (0 = no adjacent mines)
+
+    int cell_size = 20; // Your cell size
+    int pixel_x = grid_x * cell_size;
+    int pixel_y = grid_y * cell_size;
+
+    // Center the 5x5 digit in the cell with scale 3
+    int margin = (cell_size - 5*3) / 2;
+    int start_x = pixel_x + margin;
+    int start_y = pixel_y + margin;
+
+    for (int row = 0; row < 5; row++) {
+        for (int col = 0; col < 5; col++) {
+            if ((digits_compact[number][row] >> (4 - col)) & 1) {
+                // 3x3 block per "pixel"
+                for(int dx = 0; dx < 3; dx++)
+                    for(int dy = 0; dy < 3; dy++)
+                        draw_pixel(start_x + col*3 + dx, start_y + row*3 + dy, color);
+            }
+        }
+    }
+}
+
+void draw_cell(int x, int y, int cell_x, int cell_y){
+    int cell_size = 20;
+    int pixel_x = cell_x * cell_size;
+    int pixel_y = cell_y * cell_size;
+
+    if(game.revealed[cell_x][cell_y]){
+        draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
+        
+        if (game.grid[cell_x][cell_y] == -1){
+            // Draw mine (your existing mine drawing code)
+            for (int i = 0; i < cell_size; i++){
+                for (int j = 0; j < cell_size; j++){
+                    int dx = i - cell_size/2;
+                    int dy = j - cell_size/2;
+                    if (dx * dx + dy * dy <= (cell_size/3) * (cell_size/3)){
+                        draw_pixel(pixel_x + i, pixel_y + j, black);
+                    }
+                }
+            }
+        } else if(game.grid[cell_x][cell_y] > 0){
+            // Use the new draw_digit function with appropriate colors
+            char color;
+            switch(game.grid[cell_x][cell_y]) {
+                case 1: color = blue; break;
+                case 2: color = green; break;
+                case 3: color = red; break;
+                case 4: color = magenta; break;
+                case 5: color = yellow; break;
+                case 6: color = dark_gray; break;
+                case 7: color = black; break;
+                case 8: color = cyan; break;
+                default: color = gray;
+            }
+            draw_digit(cell_x, cell_y, game.grid[cell_x][cell_y], color);
+        }
+        // Note: cells with 0 adjacent mines just show as white (no number)
+    } else {
+        // Hidden cell drawing (your existing code)
+        draw_rect(pixel_x, pixel_y, cell_size, cell_size, gray);
+
+        for (int i = 0; i < cell_size; i++){
+            draw_pixel(pixel_x + i, pixel_y, dark_gray);
+            draw_pixel(pixel_x, pixel_y + i, dark_gray);
+            draw_pixel(pixel_x + i, pixel_y + cell_size - 1, dark_gray);
+            draw_pixel(pixel_x + cell_size - 1, pixel_y + i, dark_gray);
+        }
+   
+        if (game.flagged[cell_x][cell_y]){
+            // Draw flag (your existing flag code)
+            for (int i = 0; i < cell_size; i++){
+                draw_pixel(pixel_x + cell_size/2, pixel_y + i, black);
+            }
+            for (int i = 0; i < cell_size/2; i++){
+                for (int j = 0; j < cell_size/4; j++){
+                    if (j <= i){
+                        draw_pixel(pixel_x + cell_size/2 + i, pixel_y + j + cell_size/4, red);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
 void draw_number(int grid_x, int grid_y, int number){
     if(number < 0 || number > 8) return; // Only supports single digits 0-8
 
@@ -233,6 +321,7 @@ void draw_cell(int cell_x, int cell_y){
         }
     }
 }
+*/
 
 // Draw cursor around current cell
 void draw_cursor() {
@@ -255,7 +344,7 @@ void draw_board(){
     // Draw each cell
     for(int i = 0; i < game.board_size; i++){
         for(int j = 0; j < game.board_size; j++){
-            draw_cell(i, j);
+            draw_cell(0, 0, i, j);
         }
     }
     draw_cursor(); // Draw the cursor on top
