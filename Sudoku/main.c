@@ -3,13 +3,13 @@
 #include "sudoku_vga.h"
 #include "sudoku_input_vga.h"
 #include <stdint.h>
+#include <stdlib.h>   // for srand()
 
 // small delay
 static inline void delay(int cycles) {
     volatile int i = 0;
     while (i < cycles * 10000) { i++; }
 }
-
 
 // Get selected difficulty based on switch positions (Switch 1–3)
 static inline SudokuDifficulty get_selected_difficulty(void) {
@@ -22,23 +22,33 @@ static inline SudokuDifficulty get_selected_difficulty(void) {
     return EASY; // default
 }
 
-
 int main(void) {
     SudokuGame game;
     SudokuDifficulty difficulty = EASY;
 
-    volatile int *keys1 = (volatile int *) KEY1_base;
+    volatile int *keys1    = (volatile int *) KEY1_base;
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;
     const int KEY_MASK = (1 << KEY_enter);
 
     // init edge detector with current raw value (active-low)
     int prev_keys = *keys1;
 
-    // difficulty selection loop
+    // collect entropy while waiting for KEY1 press, then seed once
+    unsigned seed = 0x6D2B79F5u;
+
+    // difficulty selection loop (and entropy gather)
     while (1) {
         int current_keys = *keys1;
 
+        // simple xorshift mixing each iteration + live inputs
+        seed ^= (seed << 13);
+        seed ^= (seed >> 17);
+        seed ^= (seed << 5);
+        seed ^= (unsigned)current_keys;
+        seed ^= ((unsigned)(*SWITCHES) << 16);
+
         // active-low: pressed when bit == 0
-        int was_pressed = !(prev_keys   & KEY_MASK);
+        int was_pressed = !(prev_keys    & KEY_MASK);
         int is_pressed  = !(current_keys & KEY_MASK);
         int key_enter_press_edge = (!was_pressed && is_pressed);
 
@@ -52,6 +62,9 @@ int main(void) {
         prev_keys = current_keys;
         delay(1);
     }
+
+    // seed RNG once here (sudoku_init must NOT reseed)
+    srand(seed);
 
     // Initialize game AFTER difficulty is chosen
     sudoku_init(&game, difficulty);
@@ -84,7 +97,7 @@ int main(void) {
 
         // If finished, wait for a single KEY press edge to exit
         int current_keys = *keys1;
-        int was_pressed  = !(prev_keys   & KEY_MASK);
+        int was_pressed  = !(prev_keys    & KEY_MASK);
         int is_pressed   = !(current_keys & KEY_MASK);
         int key_press_edge = (!was_pressed && is_pressed);
 
@@ -114,3 +127,4 @@ int main(void) {
 
     return 0;
 }
+

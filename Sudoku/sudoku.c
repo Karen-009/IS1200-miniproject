@@ -84,7 +84,7 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     game->selected_row = 0;     // Start with the first cell selected, top-left corner
     game->selected_col = 0;
 
-    srand(time(NULL)); // Seed the random number generator
+    //srand(time(NULL)); // Seed the random number generator
 
     int puzzle[9][9];   // Temporary puzzle grid
     memcpy(puzzle, solved_grid, sizeof(solved_grid)); // Start with a solved grid
