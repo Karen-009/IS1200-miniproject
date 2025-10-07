@@ -190,8 +190,10 @@ void draw_cell(int cell_x, int cell_y){
     int cell_size = 20;
     int pixel_x = cell_x * cell_size;
     int pixel_y = cell_y * cell_size;
+
     if(game.revealed[cell_x][cell_y]){
         draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
+        
         // If the cell contains a mine drawa circle in the center
         if (game.grid[cell_x][cell_y] == -1){
             for (int i = 0; i < cell_size; i++){
