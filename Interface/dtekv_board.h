@@ -55,8 +55,8 @@
 #define SW_left 6      // move cursor left
 #define SW_ACTION_1 7   // toggle flag mode/ erase cell
 #define SW_ACTION_2 8 // reveal cell/ enter digit mode
-#define KEY_enter 0 // confirm action
-#define KEY_exit 0  // exit game
+#define KEY_enter 0 // confirm action (when pressed reads as bit 0 in KEY1)
+#define KEY_exit 0  
 
 
 #endif

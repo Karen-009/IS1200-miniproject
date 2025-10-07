@@ -21,7 +21,6 @@
 
 // Switch assignments for menu
 #define SW_SELECT_GAME 0  // Use switch 0 to select between games
-#define KEY_enter 0      // Use KEY0 to confirm selection
 
 // Function declarations
 void init_main_menu(void);
