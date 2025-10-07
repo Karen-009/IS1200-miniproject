@@ -36,6 +36,14 @@
 #define dark_blue 0x02
 #define dark_green 0x0C
 #define pastel_pink 0xF5 
+#define pastel_yellow 0xFD
+#define pastel_blue 0xBF
+#define pastel_green 0x7D
+#define pastel_purple 0xB3
+#define pastel_orange 0xF6
+#define light_purple 0xB3
+#define light_pink 0xF3
+#define light_orange 0xF6
 
 // Switch and Key Assignments
 #define SW_l1 0     // easy difficulty
