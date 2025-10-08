@@ -1,56 +1,53 @@
-#ifndef MINESWEEPER_H
-#define MINESWEEPER_H
+/* ----- Board-specific header (user provided) ----- */
+#ifndef DTEKV_BOARD_H
+#define DTEKV_BOARD_H
 
-// Game constants - Adjusted for better gameplay
-#define MAX_SIZE 16
-#define EASY_SIZE 8
-#define MEDIUM_SIZE 12  
-#define HARD_SIZE 16
-#define EASY_MINES 10
-#define MEDIUM_MINES 20
-#define HARD_MINES 40
+// Memory Addresses for VGA
+#define VGA_Buffer 0x08000000u
+#define VGA_DMA 0x4000100u
+#define SWITCH_base 0x4000010u
+#define KEY1_base 0x40000d0u
+#define TIMER_base 0x4000020u
+#define HEX_base 0x4000050u
+#define SWITCH_BASE 0x4000010u  
 
-// Game States
-typedef struct {
-    int grid[MAX_SIZE][MAX_SIZE];      // -1 = mine, 0-8 = adjacent mines
-    int revealed[MAX_SIZE][MAX_SIZE];  // 1 = cell is shown, 0 = hidden
-    int flagged[MAX_SIZE][MAX_SIZE];   // 1 = cell has flag, 0 = no flag
-    int board_size;                    // Current grid size
-    int mine_count;                    // Number of mines
-    int game_over;                     // 1 = lost, 0 = still playing
-    int game_won;                      // 1 = won, 0 = still playing
-    int first_click;                   // Special handling for first move
-    int cursor_x, cursor_y;            // Player's current position
-    int last_switches, last_keys;      // Previous input states
-} GameState;
+// Colors (8-bit palette indices)
+#define black     0x00
+#define white     0xFF
+#define red       0xE0
+#define yellow    0xFC
+#define green     0x1C
+#define blue      0x03
+#define cyan      0x1F
+#define magenta   0xE3
+#define gray      0x92
+#define dark_gray 0x49
+#define light_blue 0x9F
+#define orange    0xFC 
+#define light_gray 0xE4 
+#define light_green 0x7C
+#define light_red 0xF4
+#define light_yellow 0xFE
+#define purple    0xA3
+#define brown     0xB2
+#define pink      0xF3
+#define light_cyan 0xBF
+#define light_magenta 0xF3
+#define dark_blue 0x02
+#define dark_green 0x0C
+#define pastel_pink 0xF5 
 
-extern GameState game;
-
-// Function declarations
-void init_game(int difficulty);
-void setup_board(int first_x, int first_y);
-int count_adjacent_mines(int x, int y);
-void draw_pixel(int x, int y, char color);
-void draw_rect(int x, int y, int width, int height, char color);
-void draw_block(int x, int y, int width, int height, char color);
-void draw_digit(int grid_x, int grid_y, int number, char color);
-void draw_cell(int cell_x, int cell_y);
-void draw_cursor(void);
-void draw_board(void);
-void reveal_cell(int x, int y);
-void flood_fill(int x, int y);
-void flag(int x, int y);
-void check_win_condition(void);
-int get_level(void);
-void move_cursor(int dx, int dy);
-void process_action(int action);
-void handle_input(void);
-void draw_game_over(void);
-void delay(int cycles);
-
-// Utility functions
-void memory_set(void* ptr, char value, int size);
-unsigned int custom_rand(unsigned int* seed);
-int custom_strlen(const char* str);
+// Switch and Key Assignments (bit indices)
+#define SW_l1 1     // easy difficulty  (bit index)
+#define SW_l2 2     // medium difficulty
+#define SW_l3 3     // hard  difficulty
+#define SW_up 4     // move cursor up
+#define SW_down 5   // move cursor down
+#define SW_right 6  // move cursor right
+#define SW_left 7   // move cursor left
+#define SW_ACTION_1 8   // toggle flag / erase cell
+#define SW_ACTION_2 9   // reveal cell / enter digit mode
+#define KEY_enter 0 // confirm action (bit index)
 
 #endif
+/* ----- end of header ----- */

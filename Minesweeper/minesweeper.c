@@ -113,20 +113,18 @@ static uint32_t rand32(void) {
     return r;
 }
 
-/* small delay loop (not precise) */
 static void busy_wait(volatile int n) {
     while (n-- > 0) {
         asm volatile("nop");
     }
 }
 
-/* draw pixel */
 static inline void put_pixel(int x, int y, uint8_t color) {
     if (x < 0 || x >= SCREEN_W || y < 0 || y >= SCREEN_H) return;
     VGA_FB[y * SCREEN_W + x] = color;
 }
 
-/* draw filled rectangle */
+
 static void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
     if (w <= 0 || h <= 0) return;
     int x1 = x0 + w, y1 = y0 + h;
@@ -140,7 +138,6 @@ static void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
     }
 }
 
-/* 5x7 font for digits 0-9 stored as 5 bytes (LSB at top) */
 static const uint8_t font5x7_digits[10][5] = {
     {0x7E,0x81,0x81,0x81,0x7E}, // 0 - actually 8x7 but we'll use subset
     {0x00,0x82,0xFF,0x80,0x00}, // 1 (approx)
@@ -154,7 +151,6 @@ static const uint8_t font5x7_digits[10][5] = {
     {0x46,0x89,0x89,0x89,0x7E}  // 9
 };
 
-/* draw a small glyph (digit) centered in a cell */
 static void draw_digit_in_cell(int grid_r, int grid_c, int digit, uint8_t color) {
     if (digit < 0 || digit > 9) return;
     int cell_x = grid_c * CELL_SIZE;
@@ -173,7 +169,6 @@ static void draw_digit_in_cell(int grid_r, int grid_c, int digit, uint8_t color)
     }
 }
 
-/* draw cell border */
 static void draw_cell_border(int r, int c, uint8_t border_color) {
     int x0 = c * CELL_SIZE;
     int y0 = r * CELL_SIZE;
@@ -188,22 +183,21 @@ static void draw_cell_border(int r, int c, uint8_t border_color) {
     }
 }
 
-/* render whole board */
 static void render_board(void) {
-    /* background */
+    // background 
     fill_rect(0, 0, SCREEN_W, SCREEN_H, dark_blue);
 
-    /* draw cells */
+    //draw cells
     for (int r = 0; r < g_rows; ++r) {
         for (int c = 0; c < g_cols; ++c) {
             int x0 = c * CELL_SIZE;
             int y0 = r * CELL_SIZE;
-            /* cell interior */
+            // cell interior 
             if (state_grid[r][c] == HIDDEN) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, dark_gray);
             } else if (state_grid[r][c] == FLAGGED) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, red);
-                /* small flag: 3x5 block */
+                //small flag: 3x5 block
                 int fx = x0 + (CELL_SIZE - 3) / 2;
                 int fy = y0 + (CELL_SIZE - 5) / 2;
                 fill_rect(fx, fy, 1, 5, white);
@@ -211,7 +205,7 @@ static void render_board(void) {
             } else if (state_grid[r][c] == REVEALED) {
                 if (mine_grid[r][c]) {
                     fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_red);
-                    /* mine dot in center */
+                    //mine dot in center 
                     int cx = x0 + CELL_SIZE/2;
                     int cy = y0 + CELL_SIZE/2;
                     put_pixel(cx, cy, black);
@@ -222,7 +216,7 @@ static void render_board(void) {
                 } else {
                     fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
                     if (adj[r][c] > 0) {
-                        /* choose color by number */
+                        // choose color by number
                         uint8_t col = blue;
                         switch (adj[r][c]) {
                             case 1: col = blue; break;
@@ -238,15 +232,12 @@ static void render_board(void) {
                     }
                 }
             }
-            /* border */
             draw_cell_border(r, c, black);
         }
     }
 
-    /* draw cursor (inverted border) */
     int cx0 = cursor_c * CELL_SIZE;
     int cy0 = cursor_r * CELL_SIZE;
-    /* draw a highlighted border */
     for (int x = cx0; x < cx0 + CELL_SIZE; ++x) {
         put_pixel(x, cy0, light_yellow);
         put_pixel(x, cy0 + CELL_SIZE - 1, light_yellow);
@@ -257,7 +248,7 @@ static void render_board(void) {
     }
 }
 
-/* initialize board arrays */
+// initialize board arrays 
 static void clear_board_state(void) {
     for (int r = 0; r < GRID_MAX_ROWS; ++r) {
         for (int c = 0; c < GRID_MAX_COLS; ++c) {
@@ -268,7 +259,6 @@ static void clear_board_state(void) {
     }
 }
 
-/* place mines randomly */
 static void place_mines(int rows, int cols, int mines) {
     int placed = 0;
     while (placed < mines) {
@@ -281,7 +271,6 @@ static void place_mines(int rows, int cols, int mines) {
     }
 }
 
-/* compute adjacency */
 static void compute_adj(int rows, int cols) {
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
@@ -300,7 +289,6 @@ static void compute_adj(int rows, int cols) {
     }
 }
 
-/* flood fill reveal using stack (iterative) */
 static void flood_reveal(int sr, int sc) {
     if (sr < 0 || sr >= g_rows || sc < 0 || sc >= g_cols) return;
     if (state_grid[sr][sc] == REVEALED || state_grid[sr][sc] == FLAGGED) return;
@@ -308,7 +296,7 @@ static void flood_reveal(int sr, int sc) {
 
     // simple stack
     int stack_size = g_rows * g_cols;
-    int *stack_r = (int*)0; // We don't have malloc; use a static local buffer
+    int *stack_r = (int*)0;
     static int st_r[GRID_MAX_ROWS * GRID_MAX_COLS];
     static int st_c[GRID_MAX_ROWS * GRID_MAX_COLS];
     stack_r = st_r;
@@ -342,13 +330,11 @@ static void flood_reveal(int sr, int sc) {
     }
 }
 
-/* reveal a single cell */
 static void reveal_cell(int r, int c) {
     if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) return;
     if (state_grid[r][c] == REVEALED) return;
     if (state_grid[r][c] == FLAGGED) return;
     if (mine_grid[r][c]) {
-        // stepped on mine
         game_over = 1;
         // reveal all mines
         for (int rr = 0; rr < g_rows; ++rr)
@@ -364,11 +350,9 @@ static void reveal_cell(int r, int c) {
     int total = g_rows * g_cols;
     if (revealed_count >= total - g_mines) {
         game_over = 2;
-        // optionally reveal mines as flagged
     }
 }
 
-/* toggle flag */
 static void toggle_flag(int r, int c) {
     if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) return;
     if (state_grid[r][c] == REVEALED) return;
@@ -376,7 +360,6 @@ static void toggle_flag(int r, int c) {
     else if (state_grid[r][c] == FLAGGED) state_grid[r][c] = HIDDEN;
 }
 
-/* initialize new game at difficulty */
 static void start_new_game(Difficulty d) {
     clear_board_state();
     LevelSpec spec = LEVELS[d];
@@ -405,15 +388,12 @@ static inline uint32_t read_keys(void) {
     return *KEY_REG;
 }
 
-/* helper: poll until key released to avoid multi-fire from a single press */
 static void wait_key_release_all(void) {
-    // wait until all keys are 0 (not pressed)
     while (read_keys() != 0) {
         busy_wait(1000);
     }
 }
 
-/* choose difficulty by switches at start */
 static Difficulty choose_difficulty_from_switches(void) {
     uint32_t sw = read_switches();
     if (sw & SW_MASK(SW_l3)) return HARD;
@@ -422,34 +402,23 @@ static Difficulty choose_difficulty_from_switches(void) {
     return EASY;
 }
 
-/* main game loop */
 int main(void) {
-    // small startup delay
     busy_wait(100000);
 
-    // pick difficulty at start
     Difficulty diff = choose_difficulty_from_switches();
     start_new_game(diff);
-    // initial render
     render_board();
-
-    // previous key snapshot for edge detection (we want press events)
     uint32_t prev_keys = 0;
 
     while (1) {
-        // render every loop (simple)
         render_board();
-
-        // read inputs
         uint32_t sw = read_switches();
         uint32_t keys = read_keys();
 
-        /* movement: require the corresponding switch ON and key pressed (KEY_enter bit) */
         uint32_t key_pressed = keys & (1u << KEY_enter);
         uint32_t prev_key_pressed = prev_keys & (1u << KEY_enter);
 
         if (key_pressed && !prev_key_pressed) {
-            // on rising edge -- process moves/actions according to which switches are ON
             if (sw & SW_MASK(SW_up)) {
                 if (cursor_r > 0) cursor_r--;
             } else if (sw & SW_MASK(SW_down)) {
@@ -459,20 +428,15 @@ int main(void) {
             } else if (sw & SW_MASK(SW_right)) {
                 if (cursor_c < g_cols - 1) cursor_c++;
             } else if (sw & SW_MASK(SW_ACTION_1)) {
-                // toggle flag
                 toggle_flag(cursor_r, cursor_c);
             } else if (sw & SW_MASK(SW_ACTION_2)) {
-                // reveal
                 reveal_cell(cursor_r, cursor_c);
             }
-            // if user presses key with no switches, do nothing
         }
 
-        // check for game over -> display final board and halt or restart if they press key
         if (game_over != 0) {
             render_board();
             while (!(read_keys() & (1u << KEY_enter))) { busy_wait(1000); }
-            // wait release
             wait_key_release_all();
             diff = choose_difficulty_from_switches();
             start_new_game(diff);
@@ -481,7 +445,6 @@ int main(void) {
         }
 
         prev_keys = keys;
-        // small loop delay to throttle
         busy_wait(30000);
     }
 
@@ -489,5 +452,5 @@ int main(void) {
 }
 
 void handle_interrupt(){
-    
+
 }
