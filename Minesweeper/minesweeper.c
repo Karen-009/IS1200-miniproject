@@ -242,8 +242,8 @@ void draw_cell(int cell_x, int cell_y){
     if(game.revealed[cell_x][cell_y]){
         draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
         
-        // If the cell contains a mine drawa circle in the center
         if (game.grid[cell_x][cell_y] == -1){
+            // Draw mine as black circle
             for (int i = 0; i < cell_size; i++){
                 for (int j = 0; j < cell_size; j++){
                     int dx = i - cell_size/2;
@@ -254,26 +254,41 @@ void draw_cell(int cell_x, int cell_y){
                 }
             }
         } else if(game.grid[cell_x][cell_y] > 0){
-            draw_number(cell_x, cell_y, game.grid[cell_x][cell_y]);
+            // Draw number with appropriate color
+            char color;
+            switch(game.grid[cell_x][cell_y]) {
+                case 1: color = blue; break;
+                case 2: color = green; break;
+                case 3: color = red; break;
+                case 4: color = dark_blue; break;
+                case 5: color = brown; break;
+                case 6: color = cyan; break;
+                case 7: color = black; break;
+                case 8: color = dark_gray; break;
+                default: color = gray;
+            }
+            draw_digit(cell_x, cell_y, game.grid[cell_x][cell_y], color);
         }
     } else {
-        draw_rect(pixel_x, pixel_y, cell_size, cell_size, gray);
+        // Hidden cell
+        draw_rect(pixel_x, pixel_y, cell_size, cell_size, light_gray);
 
+        // Draw 3D effect borders
         for (int i = 0; i < cell_size; i++){
-            draw_pixel(pixel_x + i, pixel_y, dark_gray); // Top border
-            draw_pixel(pixel_x, pixel_y + i, dark_gray); // Left border
-            draw_pixel(pixel_x + i, pixel_y + cell_size - 1, dark_gray); // Bottom border
-            draw_pixel(pixel_x + cell_size - 1, pixel_y + i, dark_gray); // Right border
+            draw_pixel(pixel_x + i, pixel_y, white); // Top border (light)
+            draw_pixel(pixel_x, pixel_y + i, white); // Left border (light)
+            draw_pixel(pixel_x + i, pixel_y + cell_size - 1, dark_gray); // Bottom border (dark)
+            draw_pixel(pixel_x + cell_size - 1, pixel_y + i, dark_gray); // Right border (dark)
         }
    
         if (game.flagged[cell_x][cell_y]){
-            // Draw a simple flag (triangle on a pole)
+            // Draw flag
             for (int i = 0; i < cell_size; i++){
                 draw_pixel(pixel_x + cell_size/2, pixel_y + i, black); // Flag pole
             }
             for (int i = 0; i < cell_size/2; i++){
                 for (int j = 0; j < cell_size/4; j++){
-                    if (j <= i){ // Simple triangle shape
+                    if (j <= i){
                         draw_pixel(pixel_x + cell_size/2 + i, pixel_y + j + cell_size/4, red);
                     }
                 }
