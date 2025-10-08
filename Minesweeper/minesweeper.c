@@ -477,6 +477,37 @@ void handle_input(){
     // Debounce KEY_enter (active-low: pressed==0)
     int key_pressed = (current_keys & (1 << KEY_enter)) && !(last_keys_state & (1 << KEY_enter));
     last_keys_state = current_keys;
+
+    if (key_pressed) {
+        // Check if movement switches are active
+        int move_switches_active = (current_switches & ((1 << SW_up) | (1 << SW_down) | (1 << SW_left) | (1 << SW_right))) != 0;
+        
+        if (move_switches_active) {
+            // Handle movement with double-move feature
+            int move_count = 1;
+            int current_time = *((volatile int*)TIMER_base);
+            int current_direction = current_switches & ((1 << SW_up) | (1 << SW_down) | (1 << SW_left) | (1 << SW_right));
+            
+            // Check for double movement (switch continuously on)
+            if (current_direction == last_direction && (current_time - last_move_time) < 1000000) {
+                move_count = 2; // Double move if same direction pressed quickly
+            }
+            
+            last_move_time = current_time;
+            last_direction = current_direction;
+            
+            for (int i = 0; i < move_count; i++) {
+                if (current_switches & (1 << SW_up)) move_cursor(0, -1);
+                if (current_switches & (1 << SW_down)) move_cursor(0, 1);
+                if (current_switches & (1 << SW_right)) move_cursor(1, 0);
+                if (current_switches & (1 << SW_left)) move_cursor(-1, 0);
+            }
+        } else {
+            // Handle actions (flag or reveal)
+            if (current_switches & (1 << SW_ACTION_1)) process_action(SW_ACTION_1);
+            if (current_switches & (1 << SW_ACTION_2)) process_action(SW_ACTION_2);
+        }
+    }
 }
 
 void draw_game_over(){
