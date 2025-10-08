@@ -13,9 +13,42 @@ extern volatile int  *VGA_ctrl;
 extern volatile int  *SWITCHES;
 extern volatile int  *keys1;
 
-
 int menu_state = MENU_STATE_MAIN;
 int game_selection = MENU_MINEWEEPER;
+
+// Map ASCII letters to font array index 0-25 (A-Z)
+int font_index(char c) {
+    if (c >= 'A' && c <= 'Z') 
+        return c - 'A';
+    return 0; // Default to 'A' for unsupported characters
+}
+
+void draw_char(int x, int y, char c, unsigned char color) {
+    if (c < 'A' || c > 'Z') return 0; // Unsupported character
+
+    int index = font_index(c);
+    for (int row = 0; row < 8; row++) {
+        unsigned char row_data = font8x8_AZ[index][row];
+        for (int col = 0; col < 8; ++col) {
+            if (row_data & (1 << (7 - col))) { // Check if the bit is set
+                draw_pixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
+// Draw a text string at (x, y)
+void draw_text(int x, int y, const char *text, unsigned char color) {
+    while (*text) {
+        if (*text == ' ') {
+            x += 8; // Space width
+        } else {
+            draw_char(x, y, *text, color);
+            x += 8;
+        }
+        text++;
+    }
+}
 
 //Initliazlised menu statment
 void init_main_menu(void) {
@@ -23,6 +56,7 @@ void init_main_menu(void) {
     game_selection = MENU_MINEWEEPER;
 }
 
+// Draw the main menu with current selection highlighted
 void draw_main_menu(int selection) {
     // Clear screen with background color
     draw_rect(0, 0, 320, 240, light_blue);
@@ -44,23 +78,12 @@ void draw_main_menu(int selection) {
     draw_rect(85, 165, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
     // You could add text rendering here
     
-    // Draw simple text indicators (using blocks)
-    // Minesweeper text
-    int text_x = 100;
-    int text_y = 115;
-    for(int i = 0; i < 10; i++) {
-        draw_block(text_x + i*8, text_y, 6, 8, black);
-    }
-    
-    // Sudoku text
-    text_y = 175;
-    for(int i = 0; i < 6; i++) {
-        draw_block(text_x + i*8, text_y, 6, 8, black);
-    }
+    // Draw title text
+    draw_text(100, 115, "MINESWEEPER", black);
+    draw_text(130, 175, "SUDOKU", black);
     
     // Draw instructions
-    draw_rect(60, 220, 200, 15, dark_gray);
-    // Instruction text could be added here
+    draw_text(116, 20, "SELECT GAME", pink);    // centered at top
 
     *VGA_ctrl = 1; // Kick DMA to update screen
 }
@@ -151,23 +174,40 @@ SudokuDifficulty get_selected_difficulty(void) {
 void run_sudoku(void) {
     SudokuGame game;
 
-    // Choose difficulty by switches, KEY1 to confirm
+    // Entropy collection for RNG seed
     volatile int *keys = (volatile int *) KEY1_base;
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;
     const int KEY_MASK = (1 << KEY_enter);  // KEY1 bit from dtekv_board.h
     int prev_keys = *keys;                  // init edge detector
 
-    for (;;) {  // Difficulty selection loop
+    // collect entropy while waiting for KEY1 press, then seed once
+    unsigned seed = 0x6D2B79F5u;
+
+    // Difficulty selection loop (and entropy gather)
+    while (1) {
         int curr = *keys;
+
+        // simple xorshift mixing each iteration + live inputs
+        seed ^= (seed << 13);
+        seed ^= (seed >> 17);
+        seed ^= (seed << 5);
+        seed ^= (unsigned)curr;
+        seed ^= ((unsigned)(*SWITCHES) << 16);
+
         int was_pressed = !(prev_keys & KEY_MASK);  // active-low
         int is_pressed  = !(curr      & KEY_MASK);
         int key1_press_edge = (!was_pressed && is_pressed);
 
         if (key1_press_edge) {
+            prev_keys = curr;
             break; // latch difficulty on the exact press
         }
         prev_keys = curr;
         delay(1);
     }
+
+    // Seed RNG here so each Sudoku launch is fresh/random
+    srand(seed);
 
     SudokuDifficulty difficulty = get_selected_difficulty();
     sudoku_init(&game, difficulty);  // init FIRST
@@ -181,13 +221,11 @@ void run_sudoku(void) {
         ((uint32_t)game.selected_row << 8) |
         ((uint32_t)game.state        << 16);
 
-    // --- Game loop ---
+    // Game loop 
     for (;;) {
-        // Read one action per press (your get_input_vga already does edge detection)
         InputAction action = get_input_vga();
 
         if (action == INPUT_EXIT) {
-            // If you ever route an EXIT action (e.g., SW7+KEY), go back to menu
             menu_state = MENU_STATE_MAIN;
             return;
         }
@@ -197,7 +235,6 @@ void run_sudoku(void) {
             sudoku_check_win(&game);
         }
 
-        // Redraw only when something visible changed
         uint32_t sig =
             (uint32_t)game.selected_col |
             ((uint32_t)game.selected_row << 8) |
@@ -208,7 +245,7 @@ void run_sudoku(void) {
             last_sig = sig;
         }
 
-        // If finished, wait for a KEY1 press edge to return to menu
+        // Wait for KEY1 press edge to return to menu if finished
         int curr = *keys;
         int was_pressed = !(prev_keys & KEY_MASK);
         int is_pressed  = !(curr      & KEY_MASK);
