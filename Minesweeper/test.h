@@ -47,6 +47,7 @@ void process_action(int action);
 void handle_input(void);
 void draw_game_over(void);
 void delay(int cycles);
+void handle_interrupt(void);
 
 // Utility functions
 void memory_set(void* ptr, char value, int size);
