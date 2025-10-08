@@ -1,9 +1,6 @@
 #include <math.h>
-#include <stdlib.h>
 #include "minesweeper.h"
 #include "dtekv_board.h"
-
-# include <time.h>
 
 GameState game;
 
