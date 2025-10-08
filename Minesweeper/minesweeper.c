@@ -379,34 +379,6 @@ void reveal_cell(int x, int y){
     }
 }
 
-void reveal_cell(int x, int y){
-    if(x <0 || x >= game.board_size || y < 0 || y >= game.board_size){
-        return;
-    }
-
-    if(game.revealed[x][y] || game.flagged[x][y]){
-        return; // Already revealed or flagged
-    }
-
-    //PLace mines after the first click so the first click is not a mine
-    if(game.first_click){
-        setup_board(x, y);
-        game.first_click = 0;
-    }
-
-    game.revealed[x][y] = 1;
-
-    if(game.grid[x][y] == -1){
-        game.game_over = 1; //A mine has been hit
-        return;
-    }
-
-    //If the cell doen't have any adjacent mines it reveals all of the adjacent cells
-    if(game.grid[x][y] == 0){
-        flood_fill(x, y);
-    }
-}
-
 void flood_fill(int x, int y){
     // Simple recursive flood fill (be careful with stack size)
     for(int dx = -1; dx <= 1; dx++){
