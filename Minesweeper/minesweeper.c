@@ -215,30 +215,49 @@ void calculate_adjacent_mines() {
 }
 
 void reveal_cell(int x, int y) {
-    if (x < 0 || x >= game.board_size || y < 0 || y >= game.board_size || 
-        game.revealed[y][x] || game.flagged[y][x]) {
+    if (x < 0 || x >= game.board_size || y < 0 || y >= game.board_size)
         return;
-    }
-    
-    game.revealed[y][x] = 1;
-    
-    if (game.grid[y][x] == -1) {
-        game.game_over = 1;
-        reveal_all_mines();
+    if (game.revealed[y][x] || game.flagged[y][x])
         return;
-    }
-    
-    // Only recurse if the cell is empty
-    if (game.grid[y][x] == 0) {
-        // Use a safer approach - reveal adjacent without deep recursion
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                if (dx == 0 && dy == 0) continue;
-                reveal_cell(x + dx, y + dy);
+
+    int queue[MAX_SIZE * MAX_SIZE][2];
+    int front = 0, back = 0;
+
+    queue[back][0] = x;
+    queue[back][1] = y;
+    back++;
+
+    while (front < back) {
+        int cx = queue[front][0];
+        int cy = queue[front][1];
+        front++;
+
+        if (cx < 0 || cx >= game.board_size || cy < 0 || cy >= game.board_size)
+            continue;
+        if (game.revealed[cy][cx] || game.flagged[cy][cx])
+            continue;
+
+        game.revealed[cy][cx] = 1;
+
+        if (game.grid[cy][cx] == -1) {
+            game.game_over = 1;
+            reveal_all_mines();
+            return;
+        }
+
+        if (game.grid[cy][cx] == 0) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    if (dx == 0 && dy == 0) continue;
+                    queue[back][0] = cx + dx;
+                    queue[back][1] = cy + dy;
+                    back++;
+                }
             }
         }
     }
 }
+
 
 void toggle_flag(int x, int y) {
     if (!game.revealed[y][x]) {

@@ -11,7 +11,7 @@
 #define SWITCH_BASE 0x4000010  
 #define VGA_WIDTH 320
 #define VGA_HEIGHT 240
-#define VGA_BUFFER_SIZE (VGA_HEIGHT * VGA_HEIGHT)
+#define VGA_BUFFER_SIZE (VGA_WIDTH * VGA_HEIGHT)
 
 // Colors 
 #define black     0x00
