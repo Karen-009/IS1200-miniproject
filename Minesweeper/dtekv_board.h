@@ -9,6 +9,9 @@
 #define TIMER_base 0x4000020
 #define HEX_base 0x4000050
 #define SWITCH_BASE 0x4000010  
+#define VGA_WIDTH 320
+#define VGA_HEIGHT 240
+#define VGA_BUFFER_SIZE (VGA_HEIGHT * VGA_HEIGHT)
 
 // Colors 
 #define black     0x00
