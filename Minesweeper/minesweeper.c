@@ -1,26 +1,3 @@
-/*
-  minesweeper_fpga.c
-
-  Bare-metal Minesweeper for DE10-Lite (320x240 8bpp framebuffer).
-
-  Assumptions & notes:
-  - Framebuffer: 320 x 240, 1 byte per pixel (8-bit palette index)
-    Base address: VGA_Buffer (defined in the header below).
-  - Switches and keys are read by reading 32-bit words from SWITCH_BASE, KEY1_base.
-    The numeric values in the provided header are treated as bit indices (0..31).
-    Example: SW_up == 4 -> check (switch_val & (1u<<4))
-  - KEY_enter is active HIGH (1 when pressed).
-  - Movement requires direction switch ON + key press (as requested).
-  - Uses small 5x7 font for digits 1..8. Simple colored rendering of cells:
-      - Hidden cell: dark_gray
-      - Flagged: red (flag symbol)
-      - Revealed empty: light_gray
-      - Revealed number: font drawn with color depending on the number
-      - Mine symbol: black star on red background when revealed by loss
-  - Difficulty selection at start via SW_l1/SW_l2/SW_l3.
-  - Build/port notes: remove/replace any stdlib calls if your runtime doesn't provide them.
-*/
-
 #include <stdint.h>
 #include <stddef.h>
 
@@ -494,15 +471,6 @@ int main(void) {
         // check for game over -> display final board and halt or restart if they press key
         if (game_over != 0) {
             render_board();
-            // small text-free indication: blink whole screen a few times
-            for (int i = 0; i < 6; ++i) {
-                busy_wait(200000);
-                if (game_over == 1) fill_rect(0, 0, SCREEN_W, SCREEN_H, light_red);
-                else fill_rect(0, 0, SCREEN_W, SCREEN_H, light_green);
-                busy_wait(200000);
-                render_board();
-            }
-            // wait for user to press KEY_enter to restart, using same difficulty switches
             while (!(read_keys() & (1u << KEY_enter))) { busy_wait(1000); }
             // wait release
             wait_key_release_all();
