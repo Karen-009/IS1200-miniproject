@@ -408,23 +408,16 @@ void reveal_cell(int x, int y){
 }
 
 void flood_fill(int x, int y){
-    // Robust iterative flood fill (BFS) with overflow protection
-    typedef struct { int x, y; } Point;
-    Point queue[MAX_SIZE * MAX_SIZE];
-    int front = 0, back = 0;
-    queue[back++] = (Point){x, y};
-    while (front < back) {
-        if (back >= MAX_SIZE * MAX_SIZE) break; // Prevent overflow
-        Point p = queue[front++];
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                int nx = p.x + dx, ny = p.y + dy;
-                if (nx >= 0 && nx < game.board_size && ny >= 0 && ny < game.board_size) {
-                    if (!game.revealed[nx][ny] && !game.flagged[nx][ny]) {
-                        game.revealed[nx][ny] = 1;
-                        if (game.grid[nx][ny] == 0) {
-                            queue[back++] = (Point){nx, ny};
-                        }
+    // Simple recursive flood fill (be careful with stack size)
+    for(int dx = -1; dx <= 1; dx++){
+        for(int dy = -1; dy <= 1; dy++){
+            int nx = x + dx;
+            int ny = y + dy;
+            if(nx >= 0 && nx < game.board_size && ny >= 0 && ny < game.board_size){
+                if(!game.revealed[nx][ny] && !game.flagged[nx][ny]){
+                    game.revealed[nx][ny] = 1;
+                    if(game.grid[nx][ny] == 0){
+                        flood_fill(nx, ny);
                     }
                 }
             }
