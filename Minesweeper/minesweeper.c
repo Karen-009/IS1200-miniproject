@@ -464,28 +464,19 @@ void handle_input(){
     int current_switches = *SWITCHES;
     int current_keys = *keys1;
     static int last_difficulty = -1;
-    static int last_keys = 0;
+    static int last_keys_state = 0;
+    static int last_move_time = 0;
+    static int last_direction = 0;
+
     int current_difficulty = get_level();
     if(current_difficulty != last_difficulty){
         init_game(current_difficulty);
         last_difficulty = current_difficulty;
-        draw_board();
         return;
     }
     // Debounce KEY_enter (active-low: pressed==0)
-    int key_pressed = !(current_keys & (1 << KEY_enter));
-    int key_was_pressed = !(last_keys & (1 << KEY_enter));
-    if (key_pressed && !key_was_pressed) {
-        if (current_switches & (1 << SW_up)) move_cursor(0, -1);
-        if (current_switches & (1 << SW_down)) move_cursor(0, 1);
-        if (current_switches & (1 << SW_right)) move_cursor(1, 0);
-        if (current_switches & (1 << SW_left)) move_cursor(-1, 0);
-        if (current_switches & (1 << SW_ACTION_1)) process_action(SW_ACTION_1);
-        if (current_switches & (1 << SW_ACTION_2)) process_action(SW_ACTION_2);
-    }
-    last_keys = current_keys;
-    game.last_switches = current_switches;
-    game.last_keys = current_keys;
+    int key_pressed = (current_keys & (1 << KEY_enter)) && !(last_keys_state & (1 << KEY_enter));
+    last_keys_state = current_keys;
 }
 
 void draw_game_over(){
