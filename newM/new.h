@@ -55,6 +55,7 @@ void draw_ui(MinesweeperGame* game);
 void handle_input(MinesweeperGame* game);
 int check_win_condition(MinesweeperGame* game);
 void reset_game(MinesweeperGame* game);
+void handle_interrupt();
 
 // Custom random number generator (Xorshift)
 unsigned int custom_rand(MinesweeperGame* game);
