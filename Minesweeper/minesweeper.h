@@ -10,6 +10,8 @@
 #define MEDIUM_MINES 20
 #define HARD_MINES 60
 #define CELL_SIZE 20
+#define VGA_WIDTH 320
+#define VGA_HEIGHT 320
 
 
 // Function declarations
@@ -48,7 +50,6 @@ void game_loop();
 
 
 //Game States
-extern GameState game;
 typedef struct {
     int first_click;
     int game_over;
@@ -63,5 +64,7 @@ typedef struct {
     int revealed[MAX_SIZE][MAX_SIZE];  // 0 = hidden, 1 = revealed
     int flagged[MAX_SIZE][MAX_SIZE];   // 0 = not flagged, 1 = flagged
 } GameState;
+
+extern GameState game;
 
 #endif
