@@ -29,7 +29,32 @@ unsigned char digits_compact[10][5] = {
     {0x1F, 0x11, 0x1F, 0x10, 0x1F}  // 9
 };
 
+void memory_set(void* ptr, char value, int size) {
+    char* p = (char*)ptr;
+    for (int i = 0; i < size; i++) {
+        p[i] = value;
+    }
+    
+}
+
+unsigned int custom_rand(unsigned int* seed) {
+    *seed = (*seed * 1103515245 + 12345) & 0x7FFFFFFF;
+    return *seed;
+}
+
+int costum_strlen(const char* str) {
+    int len = 0;
+    while (str[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
 void init_game(int dificulty){
+
+    memory_set(&game, 0, sizeof(GameState));
+
     game.first_click = 1;
     game.game_over = 0;
     game.game_won = 0;
@@ -69,13 +94,14 @@ void init_game(int dificulty){
 
 void setup_board(int first_x, int first_y){
     int placed_mines_count = 0;
+    unsigned int seed = *((volatile unsigned int*)TIMER_base);
 
     //Place mines
     while (placed_mines_count < game.mine_count)
     {
         //Generates random locations for the mines within the board size
-        int x = my_rand() % game.board_size;
-        int y = my_rand() % game.board_size;
+        int x = custom_rand(&seed) % game.board_size;
+        int y = custom_rand(&seed) % game.board_size;
 
         if((x == first_x && y == first_y) || game.grid[x][y] == -1){
             continue; // Skip if it's the first click or already a mine
@@ -163,70 +189,6 @@ void draw_digit(int grid_x, int grid_y, int number, char color) {
     }
 }
 
-void draw_cell(int cell_x, int cell_y){
-    int cell_size = 20;
-    int pixel_x = cell_x * cell_size;
-    int pixel_y = cell_y * cell_size;
-
-    if(game.revealed[cell_x][cell_y]){
-        draw_rect(pixel_x, pixel_y, cell_size, cell_size, white);
-        
-        if (game.grid[cell_x][cell_y] == -1){
-            // Draw mine (your existing mine drawing code)
-            for (int i = 0; i < cell_size; i++){
-                for (int j = 0; j < cell_size; j++){
-                    int dx = i - cell_size/2;
-                    int dy = j - cell_size/2;
-                    if (dx * dx + dy * dy <= (cell_size/3) * (cell_size/3)){
-                        draw_pixel(pixel_x + i, pixel_y + j, black);
-                    }
-                }
-            }
-        } else if(game.grid[cell_x][cell_y] > 0){
-            // Use the new draw_digit function with appropriate colors
-            char color;
-            switch(game.grid[cell_x][cell_y]) {
-                case 1: color = blue; break;
-                case 2: color = green; break;
-                case 3: color = red; break;
-                case 4: color = magenta; break;
-                case 5: color = yellow; break;
-                case 6: color = dark_gray; break;
-                case 7: color = black; break;
-                case 8: color = cyan; break;
-                default: color = gray;
-            }
-            draw_digit(cell_x, cell_y, game.grid[cell_x][cell_y], color);
-        }
-        // Note: cells with 0 adjacent mines just show as white (no number)
-    } else {
-        // Hidden cell drawing (your existing code)
-        draw_rect(pixel_x, pixel_y, cell_size, cell_size, gray);
-
-        for (int i = 0; i < cell_size; i++){
-            draw_pixel(pixel_x + i, pixel_y, dark_gray);
-            draw_pixel(pixel_x, pixel_y + i, dark_gray);
-            draw_pixel(pixel_x + i, pixel_y + cell_size - 1, dark_gray);
-            draw_pixel(pixel_x + cell_size - 1, pixel_y + i, dark_gray);
-        }
-   
-        if (game.flagged[cell_x][cell_y]){
-            // Draw flag (your existing flag code)
-            for (int i = 0; i < cell_size; i++){
-                draw_pixel(pixel_x + cell_size/2, pixel_y + i, black);
-            }
-            for (int i = 0; i < cell_size/2; i++){
-                for (int j = 0; j < cell_size/4; j++){
-                    if (j <= i){
-                        draw_pixel(pixel_x + cell_size/2 + i, pixel_y + j + cell_size/4, red);
-                    }
-                }
-            }
-        }
-    }
-}
-
-/*
 void draw_number(int grid_x, int grid_y, int number){
     if(number < 0 || number > 8) return; // Only supports single digits 0-8
 
@@ -319,7 +281,6 @@ void draw_cell(int cell_x, int cell_y){
         }
     }
 }
-*/
 
 // Draw cursor around current cell
 void draw_cursor() {
