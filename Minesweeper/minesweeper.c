@@ -310,15 +310,73 @@ void draw_cursor() {
 }
 
 void draw_board(){
-    draw_rect(0, 0, 320, 240, light_blue); // Clear screen
+    // Clear screen with light blue background
+    draw_rect(0, 0, 640, 480, light_blue);
+
+    // Calculate board position to center it
+    int board_pixel_size = game.board_size * 20;
+    int start_x = (640 - board_pixel_size) / 2;
+    int start_y = (480 - board_pixel_size) / 2;
+    
+    // Draw board background
+    draw_rect(start_x - 2, start_y - 2, board_pixel_size + 4, board_pixel_size + 4, dark_gray);
 
     // Draw each cell
     for(int i = 0; i < game.board_size; i++){
         for(int j = 0; j < game.board_size; j++){
+            int screen_x = start_x + i * 20;
+            int screen_y = start_y + j * 20;
+            
+            // Temporary translation for drawing functions
+            int temp_x = game.cursor_x;
+            int temp_y = game.cursor_y;
+            game.cursor_x = i;
+            game.cursor_y = j;
+            
             draw_cell(i, j);
+            
+            game.cursor_x = temp_x;
+            game.cursor_y = temp_y;
         }
     }
-    draw_cursor(); // Draw the cursor on top
+    
+    // Draw cursor on top
+    int cursor_screen_x = start_x + game.cursor_x * 20;
+    int cursor_screen_y = start_y + game.cursor_y * 20;
+    for(int i = 0; i < 20; i++) {
+        draw_pixel(cursor_screen_x + i, cursor_screen_y, yellow);
+        draw_pixel(cursor_screen_x + i, cursor_screen_y + 19, yellow);
+        draw_pixel(cursor_screen_x, cursor_screen_y + i, yellow);
+        draw_pixel(cursor_screen_x + 19, cursor_screen_y + i, yellow);
+    }
+}
+
+void reveal_cell(int x, int y){
+    if(x < 0 || x >= game.board_size || y < 0 || y >= game.board_size){
+        return;
+    }
+
+    if(game.revealed[x][y] || game.flagged[x][y]){
+        return; // Already revealed or flagged
+    }
+
+    // Place mines after the first click so the first click is not a mine
+    if(game.first_click){
+        setup_board(x, y);
+        game.first_click = 0;
+    }
+
+    game.revealed[x][y] = 1;
+
+    if(game.grid[x][y] == -1){
+        game.game_over = 1; // Mine hit
+        return;
+    }
+
+    // If the cell doesn't have any adjacent mines, reveal all adjacent cells
+    if(game.grid[x][y] == 0){
+        flood_fill(x, y);
+    }
 }
 
 void reveal_cell(int x, int y){
