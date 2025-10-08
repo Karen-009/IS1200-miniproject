@@ -1,5 +1,5 @@
-# include "minesweeper.h"
-# include "dtekv_board.h"
+# include "newMheader.h"
+# include "newDheader.h"
 
 // =====================================================
 //                GLOBAL VARIABLES
