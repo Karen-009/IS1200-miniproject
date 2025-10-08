@@ -1,17 +1,43 @@
-// Board definitions
+/*
+  minesweeper_fpga.c
+
+  Bare-metal Minesweeper for DE10-Lite (320x240 8bpp framebuffer).
+
+  Assumptions & notes:
+  - Framebuffer: 320 x 240, 1 byte per pixel (8-bit palette index)
+    Base address: VGA_Buffer (defined in the header below).
+  - Switches and keys are read by reading 32-bit words from SWITCH_BASE, KEY1_base.
+    The numeric values in the provided header are treated as bit indices (0..31).
+    Example: SW_up == 4 -> check (switch_val & (1u<<4))
+  - KEY_enter is active HIGH (1 when pressed).
+  - Movement requires direction switch ON + key press (as requested).
+  - Uses small 5x7 font for digits 1..8. Simple colored rendering of cells:
+      - Hidden cell: dark_gray
+      - Flagged: red (flag symbol)
+      - Revealed empty: light_gray
+      - Revealed number: font drawn with color depending on the number
+      - Mine symbol: black star on red background when revealed by loss
+  - Difficulty selection at start via SW_l1/SW_l2/SW_l3.
+  - Build/port notes: remove/replace any stdlib calls if your runtime doesn't provide them.
+*/
+
+#include <stdint.h>
+#include <stddef.h>
+
+/* ----- Board-specific header (user provided) ----- */
 #ifndef DTEKV_BOARD_H
 #define DTEKV_BOARD_H
 
 // Memory Addresses for VGA
-#define VGA_Buffer 0x8000000
-#define VGA_DMA 0x4000100
-#define SWITCH_base 0x4000010
-#define KEY1_base 0x40000d0
-#define TIMER_base 0x4000020
-#define HEX_base 0x4000050
-#define SWITCH_BASE 0x4000010  
+#define VGA_Buffer 0x08000000u
+#define VGA_DMA 0x4000100u
+#define SWITCH_base 0x4000010u
+#define KEY1_base 0x40000d0u
+#define TIMER_base 0x4000020u
+#define HEX_base 0x4000050u
+#define SWITCH_BASE 0x4000010u  
 
-// Colors 
+// Colors (8-bit palette indices)
 #define black     0x00
 #define white     0xFF
 #define red       0xE0
@@ -37,650 +63,459 @@
 #define dark_green 0x0C
 #define pastel_pink 0xF5 
 
-// Switch and Key Assignments
-#define SW_l1 1     // easy difficulty
-#define SW_l2 2   // medium difficulty
-#define SW_l3 3   // hard  difficulty
-#define SW_up 4   // move cursor up
+// Switch and Key Assignments (bit indices)
+#define SW_l1 1     // easy difficulty  (bit index)
+#define SW_l2 2     // medium difficulty
+#define SW_l3 3     // hard  difficulty
+#define SW_up 4     // move cursor up
 #define SW_down 5   // move cursor down
 #define SW_right 6  // move cursor right
-#define SW_left 7      // move cursor left
-#define SW_ACTION_1 8   // toggle flag mode/ erase cell
-#define SW_ACTION_2 9 // reveal cell/ enter digit mode
-#define KEY_enter 0 // confirm action
+#define SW_left 7   // move cursor left
+#define SW_ACTION_1 8   // toggle flag / erase cell
+#define SW_ACTION_2 9   // reveal cell / enter digit mode
+#define KEY_enter 0 // confirm action (bit index)
 
 #endif
+/* ----- end of header ----- */
 
-// Game constants
-#define EASY_WIDTH 8
-#define EASY_HEIGHT 8
-#define EASY_MINES 10
+/* Memory mapped IO helpers */
+#define SW_REG  ((volatile uint32_t*) SWITCH_BASE)
+#define KEY_REG ((volatile uint32_t*) KEY1_base)
+#define VGA_FB  ((volatile uint8_t*) VGA_Buffer)
+#define SCREEN_W 320
+#define SCREEN_H 240
 
-#define MEDIUM_WIDTH 12
-#define MEDIUM_HEIGHT 12  
-#define MEDIUM_MINES 20
+/* Utility: treat defined switch numbers as bit indices */
+#define SW_MASK(x) (1u << (x))
 
-#define HARD_WIDTH 16
-#define HARD_HEIGHT 16
-#define HARD_MINES 40
+/* Game configuration */
+typedef enum { EASY=0, MEDIUM=1, HARD=2 } Difficulty;
 
-#define CELL_SIZE 20
-#define BORDER 50
-#define STATUS_HEIGHT 40
-#define MAX_WIDTH 16
-#define MAX_HEIGHT 16
+/* Choose sizes that fit into 320x240 with cell_size = 12 */
+#define CELL_SIZE 12
+#define GRID_MAX_COLS (SCREEN_W / CELL_SIZE)   /* = 26 */
+#define GRID_MAX_ROWS (SCREEN_H / CELL_SIZE)  /* = 20 */
 
-// Game states
-typedef enum {
-    MENU,
-    PLAYING,
-    WIN,
-    LOSE
-} GameState;
-
-// Cell states
+/* We'll pick these grid sizes for difficulties (col, row, mines) */
 typedef struct {
-    int is_mine;
-    int is_revealed;
-    int is_flagged;
-    int adjacent_mines;
-} Cell;
+    int cols, rows;
+    int mines;
+} LevelSpec;
 
-// Game structure
-typedef struct {
-    Cell board[MAX_HEIGHT][MAX_WIDTH];
-    int width;
-    int height;
-    int total_mines;
-    int flags_placed;
-    int cells_revealed;
-    int cursor_x;
-    int cursor_y;
-    GameState state;
-    int game_started;
-} Game;
-
-// Global variables
-volatile uint8_t* vga_buffer = (volatile uint8_t*)VGA_Buffer;
-volatile uint32_t* switches = (volatile uint32_t*)SWITCH_base;
-volatile uint32_t* keys = (volatile uint32_t*)KEY1_base;
-volatile uint32_t* timer = (volatile uint32_t*)TIMER_base;
-
-Game game;
-int last_key_state = 0;
-int move_switch_active = 0;
-
-// Custom utility functions
-void memory_set(void* ptr, uint8_t value, int size) {
-    uint8_t* p = (uint8_t*)ptr;
-    for (int i = 0; i < size; i++) {
-        p[i] = value;
-    }
-}
-
-void memory_copy(void* dest, const void* src, int size) {
-    uint8_t* d = (uint8_t*)dest;
-    const uint8_t* s = (const uint8_t*)src;
-    for (int i = 0; i < size; i++) {
-        d[i] = s[i];
-    }
-}
-
-int custom_strlen(const char* str) {
-    int len = 0;
-    while (str[len] != '\0') {
-        len++;
-    }
-    return len;
-}
-
-void int_to_string(int num, char* buffer) {
-    int i = 0;
-    int is_negative = 0;
-    
-    if (num < 0) {
-        is_negative = 1;
-        num = -num;
-    }
-    
-    // Handle zero case
-    if (num == 0) {
-        buffer[i++] = '0';
-    } else {
-        // Extract digits
-        while (num > 0) {
-            buffer[i++] = '0' + (num % 10);
-            num /= 10;
-        }
-    }
-    
-    // Add negative sign if needed
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
-    
-    // Reverse the string
-    for (int j = 0; j < i / 2; j++) {
-        char temp = buffer[j];
-        buffer[j] = buffer[i - j - 1];
-        buffer[i - j - 1] = temp;
-    }
-    
-    buffer[i] = '\0';
-}
-
-// Simple random number generator (linear congruential generator)
-unsigned int custom_rand(unsigned int* seed) {
-    *seed = (*seed * 1103515245 + 12345) & 0x7FFFFFFF;
-    return *seed;
-}
-
-// Function prototypes
-void initialize_game(int difficulty);
-void generate_mines();
-void calculate_adjacent_mines();
-void reveal_cell(int x, int y);
-void reveal_all_mines();
-int count_adjacent_flags(int x, int y);
-void chord_cell(int x, int y);
-void draw_cell(int x, int y, int screen_x, int screen_y);
-void draw_board();
-void draw_menu();
-void draw_status();
-void handle_input();
-
-// Memory-mapped I/O functions
-void write_pixel(int x, int y, uint8_t color) {
-    if (x >= 0 && x < 640 && y >= 0 && y < 480) {
-        vga_buffer[y * 640 + x] = color;
-    }
-}
-
-void draw_rect(int x, int y, int width, int height, uint8_t color) {
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            write_pixel(x + j, y + i, color);
-        }
-    }
-}
-
-// Simple 8x8 font data for digits and basic characters
-const uint8_t font_data[10][8] = {
-    {0x3E, 0x63, 0x73, 0x7B, 0x6F, 0x67, 0x3E, 0x00}, // 0
-    {0x0C, 0x1C, 0x0C, 0x0C, 0x0C, 0x0C, 0x3F, 0x00}, // 1
-    {0x1E, 0x33, 0x30, 0x1C, 0x06, 0x33, 0x3F, 0x00}, // 2
-    {0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00}, // 3
-    {0x38, 0x3C, 0x36, 0x33, 0x7F, 0x30, 0x78, 0x00}, // 4
-    {0x3F, 0x03, 0x1F, 0x30, 0x30, 0x33, 0x1E, 0x00}, // 5
-    {0x1C, 0x06, 0x03, 0x1F, 0x33, 0x33, 0x1E, 0x00}, // 6
-    {0x3F, 0x33, 0x30, 0x18, 0x0C, 0x0C, 0x0C, 0x00}, // 7
-    {0x1E, 0x33, 0x33, 0x1E, 0x33, 0x33, 0x1E, 0x00}, // 8
-    {0x1E, 0x33, 0x33, 0x3E, 0x30, 0x18, 0x0E, 0x00}  // 9
+static const LevelSpec LEVELS[3] = {
+    /* EASY  */ {9, 9, 10},
+    /* MEDIUM*/ {16, 12, 30},
+    /* HARD  */ {24, 16, 70}
 };
 
-void draw_char(int x, int y, char c, uint8_t color) {
-    // Only handle digits for now
-    if (c >= '0' && c <= '9') {
-        int digit = c - '0';
-        for (int i = 0; i < 8; i++) {
-            uint8_t row = font_data[digit][i];
-            for (int j = 0; j < 8; j++) {
-                if (row & (1 << (7 - j))) {
-                    write_pixel(x + j, y + i, color);
+/* Board state */
+#define MAX_CELLS (GRID_MAX_ROWS * GRID_MAX_COLS)
+static uint8_t mine_grid[GRID_MAX_ROWS][GRID_MAX_COLS]; // 1 = mine, 0 = empty
+static uint8_t adj[GRID_MAX_ROWS][GRID_MAX_COLS];       // adjacency counts (0..8)
+typedef enum { HIDDEN=0, REVEALED=1, FLAGGED=2 } CellState;
+static uint8_t state_grid[GRID_MAX_ROWS][GRID_MAX_COLS];
+
+static int g_rows = 0, g_cols = 0, g_mines = 0;
+static int revealed_count = 0;
+static int game_over = 0; // 0 running, 1 lost, 2 won
+
+/* Cursor */
+static int cursor_r = 0, cursor_c = 0;
+
+/* Simple LFSR PRNG for embedded */
+static uint32_t lfsr = 0xACE1u;
+static uint32_t rand32(void) {
+    /* 16-bit LFSR tapped at 16,14,13,11 (example) expanded to 32-bit mixing */
+    uint32_t bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1u;
+    lfsr = (lfsr >> 1) | (bit << 15);
+    /* mix to 32-bit */
+    uint32_t r = lfsr;
+    r ^= (r << 5);
+    r ^= (r >> 11);
+    r ^= (r << 7);
+    return r;
+}
+
+/* small delay loop (not precise) */
+static void busy_wait(volatile int n) {
+    while (n-- > 0) {
+        asm volatile("nop");
+    }
+}
+
+/* draw pixel */
+static inline void put_pixel(int x, int y, uint8_t color) {
+    if (x < 0 || x >= SCREEN_W || y < 0 || y >= SCREEN_H) return;
+    VGA_FB[y * SCREEN_W + x] = color;
+}
+
+/* draw filled rectangle */
+static void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
+    if (w <= 0 || h <= 0) return;
+    int x1 = x0 + w, y1 = y0 + h;
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 > SCREEN_W) x1 = SCREEN_W;
+    if (y1 > SCREEN_H) y1 = SCREEN_H;
+    for (int y = y0; y < y1; ++y) {
+        uint8_t *row = (uint8_t*)&VGA_FB[y * SCREEN_W];
+        for (int x = x0; x < x1; ++x) row[x] = color;
+    }
+}
+
+/* 5x7 font for digits 0-9 stored as 5 bytes (LSB at top) */
+static const uint8_t font5x7_digits[10][5] = {
+    {0x7E,0x81,0x81,0x81,0x7E}, // 0 - actually 8x7 but we'll use subset
+    {0x00,0x82,0xFF,0x80,0x00}, // 1 (approx)
+    {0xE2,0x91,0x91,0x91,0x8E}, // 2
+    {0x42,0x81,0x89,0x89,0x76}, // 3
+    {0x18,0x14,0x12,0xFF,0x10}, // 4
+    {0x4F,0x89,0x89,0x89,0x71}, // 5
+    {0x7E,0x89,0x89,0x89,0x72}, // 6
+    {0x01,0x01,0xF1,0x09,0x07}, // 7
+    {0x76,0x89,0x89,0x89,0x76}, // 8
+    {0x46,0x89,0x89,0x89,0x7E}  // 9
+};
+
+/* draw a small glyph (digit) centered in a cell */
+static void draw_digit_in_cell(int grid_r, int grid_c, int digit, uint8_t color) {
+    if (digit < 0 || digit > 9) return;
+    int cell_x = grid_c * CELL_SIZE;
+    int cell_y = grid_r * CELL_SIZE;
+    /* digit area: 5x7 */
+    int gx = cell_x + (CELL_SIZE - 5) / 2;
+    int gy = cell_y + (CELL_SIZE - 7) / 2;
+    const uint8_t *glyph = font5x7_digits[digit];
+    for (int col = 0; col < 5; ++col) {
+        uint8_t colbits = glyph[col];
+        for (int row = 0; row < 7; ++row) {
+            if (colbits & (1 << row)) {
+                put_pixel(gx + col, gy + row, color);
+            }
+        }
+    }
+}
+
+/* draw cell border */
+static void draw_cell_border(int r, int c, uint8_t border_color) {
+    int x0 = c * CELL_SIZE;
+    int y0 = r * CELL_SIZE;
+    /* top and bottom */
+    for (int x = x0; x < x0 + CELL_SIZE; ++x) {
+        put_pixel(x, y0, border_color);
+        put_pixel(x, y0 + CELL_SIZE - 1, border_color);
+    }
+    for (int y = y0; y < y0 + CELL_SIZE; ++y) {
+        put_pixel(x0, y, border_color);
+        put_pixel(x0 + CELL_SIZE - 1, y, border_color);
+    }
+}
+
+/* render whole board */
+static void render_board(void) {
+    /* background */
+    fill_rect(0, 0, SCREEN_W, SCREEN_H, dark_blue);
+
+    /* draw cells */
+    for (int r = 0; r < g_rows; ++r) {
+        for (int c = 0; c < g_cols; ++c) {
+            int x0 = c * CELL_SIZE;
+            int y0 = r * CELL_SIZE;
+            /* cell interior */
+            if (state_grid[r][c] == HIDDEN) {
+                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, dark_gray);
+            } else if (state_grid[r][c] == FLAGGED) {
+                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, red);
+                /* small flag: 3x5 block */
+                int fx = x0 + (CELL_SIZE - 3) / 2;
+                int fy = y0 + (CELL_SIZE - 5) / 2;
+                fill_rect(fx, fy, 1, 5, white);
+                fill_rect(fx+1, fy, 2, 3, yellow);
+            } else if (state_grid[r][c] == REVEALED) {
+                if (mine_grid[r][c]) {
+                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_red);
+                    /* mine dot in center */
+                    int cx = x0 + CELL_SIZE/2;
+                    int cy = y0 + CELL_SIZE/2;
+                    put_pixel(cx, cy, black);
+                    put_pixel(cx-1, cy, black);
+                    put_pixel(cx+1, cy, black);
+                    put_pixel(cx, cy-1, black);
+                    put_pixel(cx, cy+1, black);
+                } else {
+                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
+                    if (adj[r][c] > 0) {
+                        /* choose color by number */
+                        uint8_t col = blue;
+                        switch (adj[r][c]) {
+                            case 1: col = blue; break;
+                            case 2: col = green; break;
+                            case 3: col = red; break;
+                            case 4: col = dark_blue; break;
+                            case 5: col = magenta; break;
+                            case 6: col = cyan; break;
+                            case 7: col = brown; break;
+                            default: col = black; break;
+                        }
+                        draw_digit_in_cell(r, c, adj[r][c], col);
+                    }
+                }
+            }
+            /* border */
+            draw_cell_border(r, c, black);
+        }
+    }
+
+    /* draw cursor (inverted border) */
+    int cx0 = cursor_c * CELL_SIZE;
+    int cy0 = cursor_r * CELL_SIZE;
+    /* draw a highlighted border */
+    for (int x = cx0; x < cx0 + CELL_SIZE; ++x) {
+        put_pixel(x, cy0, light_yellow);
+        put_pixel(x, cy0 + CELL_SIZE - 1, light_yellow);
+    }
+    for (int y = cy0; y < cy0 + CELL_SIZE; ++y) {
+        put_pixel(cx0, y, light_yellow);
+        put_pixel(cx0 + CELL_SIZE - 1, y, light_yellow);
+    }
+}
+
+/* initialize board arrays */
+static void clear_board_state(void) {
+    for (int r = 0; r < GRID_MAX_ROWS; ++r) {
+        for (int c = 0; c < GRID_MAX_COLS; ++c) {
+            mine_grid[r][c] = 0;
+            adj[r][c] = 0;
+            state_grid[r][c] = HIDDEN;
+        }
+    }
+}
+
+/* place mines randomly */
+static void place_mines(int rows, int cols, int mines) {
+    int placed = 0;
+    while (placed < mines) {
+        uint32_t r = rand32() % rows;
+        uint32_t c = rand32() % cols;
+        if (!mine_grid[r][c]) {
+            mine_grid[r][c] = 1;
+            placed++;
+        }
+    }
+}
+
+/* compute adjacency */
+static void compute_adj(int rows, int cols) {
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (mine_grid[r][c]) { adj[r][c] = 0xFF; continue; }
+            int cnt = 0;
+            for (int dr = -1; dr <= 1; ++dr)
+            for (int dc = -1; dc <= 1; ++dc) {
+                if (dr == 0 && dc == 0) continue;
+                int rr = r + dr, cc = c + dc;
+                if (rr >= 0 && rr < rows && cc >= 0 && cc < cols) {
+                    if (mine_grid[rr][cc]) cnt++;
+                }
+            }
+            adj[r][c] = (uint8_t)cnt;
+        }
+    }
+}
+
+/* flood fill reveal using stack (iterative) */
+static void flood_reveal(int sr, int sc) {
+    if (sr < 0 || sr >= g_rows || sc < 0 || sc >= g_cols) return;
+    if (state_grid[sr][sc] == REVEALED || state_grid[sr][sc] == FLAGGED) return;
+    if (mine_grid[sr][sc]) return;
+
+    // simple stack
+    int stack_size = g_rows * g_cols;
+    int *stack_r = (int*)0; // We don't have malloc; use a static local buffer
+    static int st_r[GRID_MAX_ROWS * GRID_MAX_COLS];
+    static int st_c[GRID_MAX_ROWS * GRID_MAX_COLS];
+    stack_r = st_r;
+    int *stack_c = st_c;
+    int top = 0;
+    stack_r[top] = sr;
+    stack_c[top] = sc;
+    top++;
+    while (top > 0) {
+        top--;
+        int r = stack_r[top];
+        int c = stack_c[top];
+        if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) continue;
+        if (state_grid[r][c] == REVEALED || state_grid[r][c] == FLAGGED) continue;
+        state_grid[r][c] = REVEALED;
+        revealed_count++;
+        if (adj[r][c] == 0) {
+            for (int dr = -1; dr <= 1; ++dr)
+            for (int dc = -1; dc <= 1; ++dc) {
+                if (dr == 0 && dc == 0) continue;
+                int rr = r + dr, cc = c + dc;
+                if (rr >= 0 && rr < g_rows && cc >= 0 && cc < g_cols) {
+                    if (state_grid[rr][cc] == HIDDEN && !mine_grid[rr][cc]) {
+                        stack_r[top] = rr;
+                        stack_c[top] = cc;
+                        top++;
+                    }
                 }
             }
         }
     }
 }
 
-void draw_string(int x, int y, const char* str, uint8_t color) {
-    int len = custom_strlen(str);
-    for (int i = 0; i < len; i++) {
-        draw_char(x + i * 8, y, str[i], color);
+/* reveal a single cell */
+static void reveal_cell(int r, int c) {
+    if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) return;
+    if (state_grid[r][c] == REVEALED) return;
+    if (state_grid[r][c] == FLAGGED) return;
+    if (mine_grid[r][c]) {
+        // stepped on mine
+        game_over = 1;
+        // reveal all mines
+        for (int rr = 0; rr < g_rows; ++rr)
+            for (int cc = 0; cc < g_cols; ++cc)
+                if (mine_grid[rr][cc]) state_grid[rr][cc] = REVEALED;
+        return;
+    }
+    if (adj[r][c] == 0) flood_reveal(r, c);
+    else {
+        state_grid[r][c] = REVEALED;
+        revealed_count++;
+    }
+    int total = g_rows * g_cols;
+    if (revealed_count >= total - g_mines) {
+        game_over = 2;
+        // optionally reveal mines as flagged
     }
 }
 
-void clear_screen(uint8_t color) {
-    for (int y = 0; y < 480; y++) {
-        for (int x = 0; x < 640; x++) {
-            write_pixel(x, y, color);
+/* toggle flag */
+static void toggle_flag(int r, int c) {
+    if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) return;
+    if (state_grid[r][c] == REVEALED) return;
+    if (state_grid[r][c] == HIDDEN) state_grid[r][c] = FLAGGED;
+    else if (state_grid[r][c] == FLAGGED) state_grid[r][c] = HIDDEN;
+}
+
+/* initialize new game at difficulty */
+static void start_new_game(Difficulty d) {
+    clear_board_state();
+    LevelSpec spec = LEVELS[d];
+    g_cols = spec.cols;
+    g_rows = spec.rows;
+    g_mines = spec.mines;
+    if (g_cols > GRID_MAX_COLS) g_cols = GRID_MAX_COLS;
+    if (g_rows > GRID_MAX_ROWS) g_rows = GRID_MAX_ROWS;
+    // center cursor
+    cursor_r = g_rows / 2;
+    cursor_c = g_cols / 2;
+    revealed_count = 0;
+    game_over = 0;
+    // place mines and compute adj
+    place_mines(g_rows, g_cols, g_mines);
+    compute_adj(g_rows, g_cols);
+}
+
+/* read switches */
+static inline uint32_t read_switches(void) {
+    return *SW_REG;
+}
+
+/* read keys */
+static inline uint32_t read_keys(void) {
+    return *KEY_REG;
+}
+
+/* helper: poll until key released to avoid multi-fire from a single press */
+static void wait_key_release_all(void) {
+    // wait until all keys are 0 (not pressed)
+    while (read_keys() != 0) {
+        busy_wait(1000);
+    }
+}
+
+/* choose difficulty by switches at start */
+static Difficulty choose_difficulty_from_switches(void) {
+    uint32_t sw = read_switches();
+    if (sw & SW_MASK(SW_l3)) return HARD;
+    if (sw & SW_MASK(SW_l2)) return MEDIUM;
+    if (sw & SW_MASK(SW_l1)) return EASY;
+    return EASY;
+}
+
+/* main game loop */
+int main(void) {
+    // small startup delay
+    busy_wait(100000);
+
+    // pick difficulty at start
+    Difficulty diff = choose_difficulty_from_switches();
+    start_new_game(diff);
+    // initial render
+    render_board();
+
+    // previous key snapshot for edge detection (we want press events)
+    uint32_t prev_keys = 0;
+
+    while (1) {
+        // render every loop (simple)
+        render_board();
+
+        // read inputs
+        uint32_t sw = read_switches();
+        uint32_t keys = read_keys();
+
+        /* movement: require the corresponding switch ON and key pressed (KEY_enter bit) */
+        uint32_t key_pressed = keys & (1u << KEY_enter);
+        uint32_t prev_key_pressed = prev_keys & (1u << KEY_enter);
+
+        if (key_pressed && !prev_key_pressed) {
+            // on rising edge -- process moves/actions according to which switches are ON
+            if (sw & SW_MASK(SW_up)) {
+                if (cursor_r > 0) cursor_r--;
+            } else if (sw & SW_MASK(SW_down)) {
+                if (cursor_r < g_rows - 1) cursor_r++;
+            } else if (sw & SW_MASK(SW_left)) {
+                if (cursor_c > 0) cursor_c--;
+            } else if (sw & SW_MASK(SW_right)) {
+                if (cursor_c < g_cols - 1) cursor_c++;
+            } else if (sw & SW_MASK(SW_ACTION_1)) {
+                // toggle flag
+                toggle_flag(cursor_r, cursor_c);
+            } else if (sw & SW_MASK(SW_ACTION_2)) {
+                // reveal
+                reveal_cell(cursor_r, cursor_c);
+            }
+            // if user presses key with no switches, do nothing
         }
-    }
-}
 
-uint32_t read_switches() {
-    return *switches;
-}
-
-uint32_t read_keys() {
-    return *keys;
-}
-
-uint32_t read_timer() {
-    return *timer;
-}
-
-// Game functions
-void initialize_game(int difficulty) {
-    // Reset game board
-    for (int i = 0; i < MAX_HEIGHT; i++) {
-        for (int j = 0; j < MAX_WIDTH; j++) {
-            game.board[i][j].is_mine = 0;
-            game.board[i][j].is_revealed = 0;
-            game.board[i][j].is_flagged = 0;
-            game.board[i][j].adjacent_mines = 0;
-        }
-    }
-    
-    // Set game parameters based on difficulty
-    switch (difficulty) {
-        case 1: // Easy
-            game.width = EASY_WIDTH;
-            game.height = EASY_HEIGHT;
-            game.total_mines = EASY_MINES;
-            break;
-        case 2: // Medium
-            game.width = MEDIUM_WIDTH;
-            game.height = MEDIUM_HEIGHT;
-            game.total_mines = MEDIUM_MINES;
-            break;
-        case 3: // Hard
-            game.width = HARD_WIDTH;
-            game.height = HARD_HEIGHT;
-            game.total_mines = HARD_MINES;
-            break;
-        default:
-            game.width = EASY_WIDTH;
-            game.height = EASY_HEIGHT;
-            game.total_mines = EASY_MINES;
-    }
-    
-    // Initialize game state
-    game.flags_placed = 0;
-    game.cells_revealed = 0;
-    game.cursor_x = 0;
-    game.cursor_y = 0;
-    game.state = PLAYING;
-    game.game_started = 0;
-}
-
-void generate_mines() {
-    int mines_placed = 0;
-    unsigned int seed = read_timer(); // Use timer as random seed
-    
-    while (mines_placed < game.total_mines) {
-        int x = custom_rand(&seed) % game.width;
-        int y = custom_rand(&seed) % game.height;
-        
-        // Don't place mine at cursor position on first click
-        if (!game.game_started && x == game.cursor_x && y == game.cursor_y) {
+        // check for game over -> display final board and halt or restart if they press key
+        if (game_over != 0) {
+            render_board();
+            // small text-free indication: blink whole screen a few times
+            for (int i = 0; i < 6; ++i) {
+                busy_wait(200000);
+                if (game_over == 1) fill_rect(0, 0, SCREEN_W, SCREEN_H, light_red);
+                else fill_rect(0, 0, SCREEN_W, SCREEN_H, light_green);
+                busy_wait(200000);
+                render_board();
+            }
+            // wait for user to press KEY_enter to restart, using same difficulty switches
+            while (!(read_keys() & (1u << KEY_enter))) { busy_wait(1000); }
+            // wait release
+            wait_key_release_all();
+            diff = choose_difficulty_from_switches();
+            start_new_game(diff);
+            prev_keys = 0;
             continue;
         }
-        
-        if (!game.board[y][x].is_mine) {
-            game.board[y][x].is_mine = 1;
-            mines_placed++;
-        }
-    }
-    
-    calculate_adjacent_mines();
-    game.game_started = 1;
-}
 
-void calculate_adjacent_mines() {
-    for (int y = 0; y < game.height; y++) {
-        for (int x = 0; x < game.width; x++) {
-            if (game.board[y][x].is_mine) {
-                game.board[y][x].adjacent_mines = 0;
-                continue;
-            }
-            
-            int count = 0;
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    int nx = x + dx;
-                    int ny = y + dy;
-                    if (nx >= 0 && nx < game.width && ny >= 0 && ny < game.height) {
-                        if (game.board[ny][nx].is_mine) {
-                            count++;
-                        }
-                    }
-                }
-            }
-            game.board[y][x].adjacent_mines = count;
-        }
+        prev_keys = keys;
+        // small loop delay to throttle
+        busy_wait(30000);
     }
-}
 
-void reveal_cell(int x, int y) {
-    if (x < 0 || x >= game.width || y < 0 || y >= game.height) return;
-    if (game.board[y][x].is_revealed || game.board[y][x].is_flagged) return;
-    
-    game.board[y][x].is_revealed = 1;
-    game.cells_revealed++;
-    
-    if (game.board[y][x].is_mine) {
-        game.state = LOSE;
-        reveal_all_mines();
-        return;
-    }
-    
-    // If cell has no adjacent mines, reveal neighbors
-    if (game.board[y][x].adjacent_mines == 0) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                reveal_cell(x + dx, y + dy);
-            }
-        }
-    }
-    
-    // Check for win condition
-    if (game.cells_revealed == (game.width * game.height - game.total_mines)) {
-        game.state = WIN;
-    }
-}
-
-void reveal_all_mines() {
-    for (int y = 0; y < game.height; y++) {
-        for (int x = 0; x < game.width; x++) {
-            if (game.board[y][x].is_mine) {
-                game.board[y][x].is_revealed = 1;
-            }
-        }
-    }
-}
-
-int count_adjacent_flags(int x, int y) {
-    int count = 0;
-    for (int dy = -1; dy <= 1; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < game.width && ny >= 0 && ny < game.height) {
-                if (game.board[ny][nx].is_flagged) {
-                    count++;
-                }
-            }
-        }
-    }
-    return count;
-}
-
-void chord_cell(int x, int y) {
-    if (!game.board[y][x].is_revealed || game.board[y][x].adjacent_mines == 0) return;
-    
-    int flag_count = count_adjacent_flags(x, y);
-    if (flag_count == game.board[y][x].adjacent_mines) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                int nx = x + dx;
-                int ny = y + dy;
-                if (nx >= 0 && nx < game.width && ny >= 0 && ny < game.height) {
-                    if (!game.board[ny][nx].is_flagged && !game.board[ny][nx].is_revealed) {
-                        reveal_cell(nx, ny);
-                    }
-                }
-            }
-        }
-    }
-}
-
-void draw_cell(int x, int y, int screen_x, int screen_y) {
-    Cell cell = game.board[y][x];
-    uint8_t bg_color = light_gray;
-    uint8_t border_color = dark_gray;
-    uint8_t text_color = black;
-    
-    // Draw cell background
-    if (x == game.cursor_x && y == game.cursor_y) {
-        bg_color = light_blue; // Highlight cursor
-    }
-    
-    if (cell.is_revealed) {
-        if (cell.is_mine) {
-            bg_color = light_red;
-        } else {
-            bg_color = white;
-        }
-    }
-    
-    draw_rect(screen_x, screen_y, CELL_SIZE, CELL_SIZE, bg_color);
-    
-    // Draw cell border
-    draw_rect(screen_x, screen_y, CELL_SIZE, 1, border_color);
-    draw_rect(screen_x, screen_y, 1, CELL_SIZE, border_color);
-    draw_rect(screen_x + CELL_SIZE - 1, screen_y, 1, CELL_SIZE, border_color);
-    draw_rect(screen_x, screen_y + CELL_SIZE - 1, CELL_SIZE, 1, border_color);
-    
-    // Draw cell content
-    if (cell.is_revealed) {
-        if (cell.is_mine) {
-            // Draw mine
-            draw_rect(screen_x + CELL_SIZE/2 - 2, screen_y + CELL_SIZE/2 - 2, 4, 4, black);
-        } else if (cell.adjacent_mines > 0) {
-            // Draw number
-            char num_str[2];
-            num_str[0] = '0' + cell.adjacent_mines;
-            num_str[1] = '\0';
-            
-            // Set color based on number
-            switch (cell.adjacent_mines) {
-                case 1: text_color = blue; break;
-                case 2: text_color = green; break;
-                case 3: text_color = red; break;
-                case 4: text_color = dark_blue; break;
-                case 5: text_color = brown; break;
-                case 6: text_color = cyan; break;
-                case 7: text_color = black; break;
-                case 8: text_color = dark_gray; break;
-            }
-            
-            draw_string(screen_x + CELL_SIZE/2 - 4, screen_y + CELL_SIZE/2 - 4, num_str, text_color);
-        }
-    } else if (cell.is_flagged) {
-        // Draw flag
-        draw_rect(screen_x + CELL_SIZE/2 - 2, screen_y + 4, 4, 8, red);
-    }
-}
-
-void draw_board() {
-    int board_width = game.width * CELL_SIZE;
-    int board_height = game.height * CELL_SIZE;
-    int start_x = (640 - board_width) / 2;
-    int start_y = BORDER + STATUS_HEIGHT;
-    
-    // Draw board background
-    draw_rect(start_x - 2, start_y - 2, board_width + 4, board_height + 4, dark_gray);
-    
-    // Draw cells
-    for (int y = 0; y < game.height; y++) {
-        for (int x = 0; x < game.width; x++) {
-            int screen_x = start_x + x * CELL_SIZE;
-            int screen_y = start_y + y * CELL_SIZE;
-            draw_cell(x, y, screen_x, screen_y);
-        }
-    }
-}
-
-void draw_menu() {
-    clear_screen(blue);
-    
-    // Draw menu text using simple rectangles (since we don't have full font)
-    draw_string(250, 100, "MINESWEEPER", white);
-    draw_string(200, 150, "SELECT LEVEL:", white);
-    
-    // Draw difficulty options with highlighting
-    if (read_switches() & (1 << SW_l1)) {
-        draw_rect(240, 190, 160, 25, yellow);
-        draw_string(250, 200, "EASY 8X8 10MINES", black);
-    } else {
-        draw_rect(240, 190, 160, 25, white);
-        draw_string(250, 200, "EASY 8X8 10MINES", black);
-    }
-    
-    if (read_switches() & (1 << SW_l2)) {
-        draw_rect(240, 220, 160, 25, yellow);
-        draw_string(250, 230, "MEDIUM 12X12 20MINES", black);
-    } else {
-        draw_rect(240, 220, 160, 25, white);
-        draw_string(250, 230, "MEDIUM 12X12 20MINES", black);
-    }
-    
-    if (read_switches() & (1 << SW_l3)) {
-        draw_rect(240, 250, 160, 25, yellow);
-        draw_string(250, 260, "HARD 16X16 40MINES", black);
-    } else {
-        draw_rect(240, 250, 160, 25, white);
-        draw_string(250, 260, "HARD 16X16 40MINES", black);
-    }
-    
-    draw_string(220, 320, "PRESS KEY0 TO START", white);
-}
-
-void draw_status() {
-    int start_y = BORDER;
-    
-    // Draw background
-    draw_rect(0, 0, 640, BORDER + STATUS_HEIGHT, dark_blue);
-    
-    // Draw game info
-    char status[30];
-    char mines_str[10];
-    char flags_str[10];
-    
-    int_to_string(game.total_mines - game.flags_placed, mines_str);
-    int_to_string(game.total_mines, flags_str);
-    
-    if (game.state == PLAYING) {
-        // Build status string manually
-        char status[] = "MINES: ";
-        draw_string(20, 20, status, white);
-        draw_string(20 + 7*8, 20, mines_str, white);
-        draw_string(20 + 7*8 + custom_strlen(mines_str)*8, 20, "/", white);
-        draw_string(20 + 7*8 + custom_strlen(mines_str)*8 + 8, 20, flags_str, white);
-    } else if (game.state == WIN) {
-        draw_string(20, 20, "YOU WIN! PRESS KEY0 FOR MENU", yellow);
-    } else if (game.state == LOSE) {
-        draw_string(20, 20, "GAME OVER! PRESS KEY0 FOR MENU", red);
-    }
-    
-    // Draw controls info
-    draw_string(400, 20, "SW8:FLAG SW9:REVEAL", white);
-}
-
-void handle_input() {
-    uint32_t current_switches = read_switches();
-    uint32_t current_keys = read_keys();
-    
-    // Check for key press (edge detection)
-    int key_pressed = (current_keys & (1 << KEY_enter)) && !(last_key_state & (1 << KEY_enter));
-    last_key_state = current_keys;
-    
-    // Check if move switch is active
-    move_switch_active = (current_switches & ((1 << SW_up) | (1 << SW_down) | (1 << SW_left) | (1 << SW_right))) != 0;
-    
-    if (game.state == MENU) {
-        if (key_pressed) {
-            if (current_switches & (1 << SW_l1)) {
-                initialize_game(1);
-            } else if (current_switches & (1 << SW_l2)) {
-                initialize_game(2);
-            } else if (current_switches & (1 << SW_l3)) {
-                initialize_game(3);
-            }
-        }
-        return;
-    }
-    
-    if (game.state == WIN || game.state == LOSE) {
-        if (key_pressed) {
-            game.state = MENU;
-        }
-        return;
-    }
-    
-    // Handle movement with switch-based control
-    if (key_pressed && move_switch_active) {
-        int move_count = 1;
-        
-        // Check for double movement (switch continuously on)
-        static int last_move_time = 0;
-        static int last_direction = 0;
-        int current_time = read_timer();
-        int current_direction = current_switches & ((1 << SW_up) | (1 << SW_down) | (1 << SW_left) | (1 << SW_right));
-        
-        if (current_direction == last_direction && (current_time - last_move_time) < 1000000) {
-            move_count = 2; // Double move if same direction pressed quickly
-        }
-        
-        last_move_time = current_time;
-        last_direction = current_direction;
-        
-        for (int i = 0; i < move_count; i++) {
-            if (current_switches & (1 << SW_up)) {
-                if (game.cursor_y > 0) game.cursor_y--;
-            }
-            if (current_switches & (1 << SW_down)) {
-                if (game.cursor_y < game.height - 1) game.cursor_y++;
-            }
-            if (current_switches & (1 << SW_left)) {
-                if (game.cursor_x > 0) game.cursor_x--;
-            }
-            if (current_switches & (1 << SW_right)) {
-                if (game.cursor_x < game.width - 1) game.cursor_x++;
-            }
-        }
-    }
-    
-    // Handle actions
-    if (key_pressed && !move_switch_active) {
-        if (!game.game_started) {
-            generate_mines();
-        }
-        
-        if (current_switches & (1 << SW_ACTION_1)) {
-            // Toggle flag
-            Cell* cell = &game.board[game.cursor_y][game.cursor_x];
-            if (!cell->is_revealed) {
-                cell->is_flagged = !cell->is_flagged;
-                if (cell->is_flagged) {
-                    game.flags_placed++;
-                } else {
-                    game.flags_placed--;
-                }
-            }
-        } else if (current_switches & (1 << SW_ACTION_2)) {
-            // Reveal cell or chord
-            Cell* cell = &game.board[game.cursor_y][game.cursor_x];
-            if (cell->is_revealed) {
-                chord_cell(game.cursor_x, game.cursor_y);
-            } else if (!cell->is_flagged) {
-                reveal_cell(game.cursor_x, game.cursor_y);
-            }
-        }
-    }
-}
-
-int main() {
-    // Initialize game
-    memory_set(&game, 0, sizeof(Game));
-    game.state = MENU;
-    
-    // Main game loop
-    while (1) {
-        handle_input();
-        
-        if (game.state == MENU) {
-            draw_menu();
-        } else {
-            clear_screen(black);
-            draw_status();
-            draw_board();
-        }
-        
-        // Small delay to prevent flickering
-        for (volatile int i = 0; i < 10000; i++);
-    }
-    
     return 0;
 }
