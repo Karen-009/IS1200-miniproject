@@ -64,6 +64,4 @@ typedef struct {
     int flagged[MAX_SIZE][MAX_SIZE];   // 0 = not flagged, 1 = flagged
 } GameState;
 
-extern GameState game;
-
 #endif
