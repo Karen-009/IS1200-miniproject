@@ -10,8 +10,6 @@
 #define MEDIUM_MINES 20
 #define HARD_MINES 60
 #define CELL_SIZE 20
-#define VGA_WIDTH 320
-#define VGA_HEIGHT 320
 
 
 // Function declarations
@@ -19,6 +17,7 @@ void handle_interrupt();
 
 // Game initialization
 void init_game(int dificulty);
+void init_vga(void);
 
 // VGA / Graphics functions
 void draw_pixel(int x, int y, char color);
