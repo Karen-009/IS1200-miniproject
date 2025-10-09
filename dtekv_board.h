@@ -49,15 +49,15 @@ void test(void);
 #define light_orange 0xF6
 
 // Switch and Key Assignments
-#define SW_l1 0     // easy difficulty
-#define SW_l2 1   // medium difficulty
-#define SW_l3 2   // hard  difficulty
-#define SW_up 3   // move cursor up
-#define SW_down 4   // move cursor down
-#define SW_right 5  // move cursor right
-#define SW_left 6      // move cursor left
-#define SW_ACTION_1 7   // toggle flag mode/ erase cell
-#define SW_ACTION_2 8 // reveal cell/ enter digit mode
+#define SW_l1 1     // easy difficulty
+#define SW_l2 2   // medium difficulty
+#define SW_l3 3   // hard  difficulty
+#define SW_up 4   // move cursor up
+#define SW_down 5   // move cursor down
+#define SW_right 6  // move cursor right
+#define SW_left 7      // move cursor left
+#define SW_ACTION_1 8   // toggle flag mode/ erase cell
+#define SW_ACTION_2 9 // reveal cell/ enter digit mode
 #define KEY_enter 0 // confirm action (when pressed reads as bit 0 in KEY1)
 #define KEY_exit 0  
 

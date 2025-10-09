@@ -133,6 +133,15 @@ int handle_menu_input(void) {
     return MENU_STATE_MAIN;
 }
 
+void draw_difficulty_screen(SudokuDifficulty difficulty) {
+    draw_rect(0, 0, 320, 240, light_blue);
+    draw_text(60, 60, "SELECT DIFFICULTY:", pink);
+    draw_text(80, 110, (difficulty == EASY)   ? "> EASY"   : "  EASY",   (difficulty == EASY)   ? yellow : black);
+    draw_text(80, 150, (difficulty == MEDIUM) ? "> MEDIUM" : "  MEDIUM", (difficulty == MEDIUM) ? yellow : black);
+    draw_text(80, 190, (difficulty == HARD)   ? "> HARD"   : "  HARD",   (difficulty == HARD)   ? yellow : black);
+    draw_text(40, 210, "Set SW1/2/3, press KEY1 to confirm", black);
+    *VGA_ctrl = 1;
+}
 
 void run_minesweeper(void) {
     // Initialize and run minesweeper game
@@ -144,9 +153,9 @@ SudokuDifficulty get_selected_difficulty(void) {
     int switches = *SWITCHES;
 
     // Use the same bits your Sudoku main used (typically SW1..SW3)
-    if (switches & (1 << 3)) return HARD;    // SW3
-    if (switches & (1 << 2)) return MEDIUM;  // SW2
-    if (switches & (1 << 1)) return EASY;    // SW1
+    if (switches & (1 << SW_l3)) return HARD;    // SW3
+    if (switches & (1 << SW_l2)) return MEDIUM;  // SW2
+    if (switches & (1 << SW_l1)) return EASY;    // SW1
     return EASY; // default
 }
 
@@ -159,36 +168,50 @@ void run_sudoku(void) {
     const int KEY_MASK = (1 << KEY_enter);  // KEY1 bit from dtekv_board.h
     int prev_keys = *keys;                  // init edge detector
 
-    // collect entropy while waiting for KEY1 press, then seed once
-    unsigned seed = 0x6D2B79F5u;
-
     // Difficulty selection loop (and entropy gather)
+    SudokuDifficulty difficulty = EASY;     // Default
+    unsigned seed = 0x6D2B79F5u;
+    int last_difficulty = -1; // For redraw optimization
+
     while (1) {
         int curr = *keys;
+        int switches = *SWITCHES;
 
-        // simple xorshift mixing each iteration + live inputs
+        // Entropy for RNG
         seed ^= (seed << 13);
         seed ^= (seed >> 17);
         seed ^= (seed << 5);
         seed ^= (unsigned)curr;
-        seed ^= ((unsigned)(*SWITCHES) << 16);
+        seed ^= ((unsigned)switches << 16);
 
-        int was_pressed = !(prev_keys & KEY_MASK);  // active-low
+        // Detect selected difficulty
+        if (switches & (1 << SW_l3)) difficulty = HARD;
+        else if (switches & (1 << SW_l2)) difficulty = MEDIUM;
+        else if (switches & (1 << SW_l1)) difficulty = EASY;
+        else difficulty = EASY; // fallback
+
+        // Only redraw if difficulty changed
+        if (last_difficulty != difficulty) {
+            draw_difficulty_screen(difficulty);
+            last_difficulty = difficulty;
+        }
+
+        // KEY1 edge detection (active-low)
+        int was_pressed = !(prev_keys & KEY_MASK);
         int is_pressed  = !(curr      & KEY_MASK);
         int key1_press_edge = (!was_pressed && is_pressed);
 
         if (key1_press_edge) {
             prev_keys = curr;
-            break; // latch difficulty on the exact press
+            break; // Confirm and continue
         }
         prev_keys = curr;
-        delay(1);
+        delay(5); // Small delay for debounce and flicker prevention
     }
 
     // Seed RNG here so each Sudoku launch is fresh/random
     srand(seed);
 
-    SudokuDifficulty difficulty = get_selected_difficulty();
     sudoku_init(&game, difficulty);  // init FIRST
 
     // Initial draw
@@ -200,7 +223,7 @@ void run_sudoku(void) {
         ((uint32_t)game.selected_row << 8) |
         ((uint32_t)game.state        << 16);
 
-    // Game loop 
+    // Game loop
     for (;;) {
         InputAction action = get_input_vga();
 
@@ -245,7 +268,7 @@ void delay(int ms){
     for (i = 0; i < ms * 10000; i++)
     {
         j = i;
-    }  
+    }
 }
 
 void test(void) {
