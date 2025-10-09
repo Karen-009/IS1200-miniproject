@@ -368,6 +368,19 @@ void wait_key_release_all(void) {
     }
 }
 
+void draw_game_over(const SudokuGame *game) {
+    if (game->state == GAME_LOST) {
+        // Draw "GAME OVER" text
+        draw_text(120, 110, "GAME OVER", red);
+    } else if (game->state == GAME_WON) {
+        // Draw "YOU WIN" text  
+        draw_text(130, 110, "YOU WIN", green);
+    }
+    
+    // Add "Press KEY1 to continue" message
+    draw_text(80, 130, "Press KEY1 to continue", black);
+}
+
 /*int minesweeper(void) {
     // small startup delay
     busy_wait(100000);
