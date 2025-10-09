@@ -42,3 +42,8 @@ unsigned int time(unsigned int *t) {
 
 // Dummy interrupt handler so boot.S stops complaining
 void handle_interrupt(void) {}
+
+// Absolute value function
+int abs(int n) {
+    return (n < 0) ? -n : n;
+}
