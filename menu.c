@@ -167,34 +167,17 @@ void run_sudoku(void) {
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
     const int KEY_MASK = (1 << KEY_enter);  // KEY1 bit from dtekv_board.h
     int prev_keys = *keys;                  // init edge detector
-
-    // Difficulty selection loop (and entropy gather)
-    SudokuDifficulty difficulty = EASY;     // Default
     unsigned seed = 0x6D2B79F5u;
-    int last_difficulty = -1; // For redraw optimization
 
     while (1) {
         int curr = *keys;
-        int switches = *SWITCHES;
 
         // Entropy for RNG
         seed ^= (seed << 13);
         seed ^= (seed >> 17);
         seed ^= (seed << 5);
         seed ^= (unsigned)curr;
-        seed ^= ((unsigned)switches << 16);
-
-        // Detect selected difficulty
-        if (switches & (1 << SW_l3)) difficulty = HARD;
-        else if (switches & (1 << SW_l2)) difficulty = MEDIUM;
-        else if (switches & (1 << SW_l1)) difficulty = EASY;
-        else difficulty = EASY; // fallback
-
-        // Only redraw if difficulty changed
-        if (last_difficulty != difficulty) {
-            draw_difficulty_screen(difficulty);
-            last_difficulty = difficulty;
-        }
+        seed ^= ((unsigned)SWITCHES << 16);
 
         // KEY1 edge detection (active-low)
         int was_pressed = !(prev_keys & KEY_MASK);
@@ -212,7 +195,9 @@ void run_sudoku(void) {
     // Seed RNG here so each Sudoku launch is fresh/random
     srand(seed);
 
-    sudoku_init(&game, difficulty);  // init FIRST
+    // Difficulty selection
+    SudokuDifficulty difficulty = get_selected_difficulty();
+    sudoku_init(&game, difficulty);
 
     // Initial draw
     sudoku_render_vga(&game);
@@ -225,28 +210,30 @@ void run_sudoku(void) {
 
     // Game loop
     for (;;) {
-        InputAction action = get_input_vga();
+    InputAction action = get_input_vga();
 
-        if (action == INPUT_EXIT) {
-            menu_state = MENU_STATE_MAIN;
-            return;
-        }
+    int needs_redraw = 0;
 
-        if (action != INPUT_NONE) {
-            sudoku_update(&game, action);
-            sudoku_check_win(&game);
-        }
+    if (action == INPUT_EXIT) {
+        menu_state = MENU_STATE_MAIN;
+        return;
+    }
 
-        uint32_t sig =
-            (uint32_t)game.selected_col |
-            ((uint32_t)game.selected_row << 8) |
-            ((uint32_t)game.state        << 16);
+    if (action != INPUT_NONE) {
+        sudoku_update(&game, action);
+        sudoku_check_win(&game);
+        needs_redraw = 1; // Always redraw after any action!
+    }
 
-        if (sig != last_sig) {
-            sudoku_render_vga(&game);
-            last_sig = sig;
-        }
+    uint32_t sig =
+        (uint32_t)game.selected_col |
+        ((uint32_t)game.selected_row << 8) |
+        ((uint32_t)game.state        << 16);
 
+    if (needs_redraw || sig != last_sig) {
+        sudoku_render_vga(&game);
+        last_sig = sig;
+    }
         // Wait for KEY1 press edge to return to menu if finished
         int curr = *keys;
         int was_pressed = !(prev_keys & KEY_MASK);
