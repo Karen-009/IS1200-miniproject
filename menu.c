@@ -15,7 +15,6 @@ extern volatile int  *keys1;
 int menu_state = MENU_STATE_MAIN;
 int game_selection = MENU_MINEWEEPER;
 
-
 // Map ASCII letters to font array index 0-25 (A-Z)
 int font_index(char c) {
     if (c >= 'A' && c <= 'Z') 
@@ -57,56 +56,44 @@ void init_main_menu(void) {
 }
 
 // Draw the main menu with current selection highlighted
-// menu.c - Replace the draw_main_menu function
-
-// menu.c - Replace the draw_main_menu function with this simplified version
-
 void draw_main_menu(int selection) {
     // Clear screen with background color
     draw_rect(0, 0, 320, 240, light_blue);
-    
-    // Draw title "MENU" at the top
-    draw_text(140, 30, "MENU", pink);
+
     
     // Draw selection box
-    int box_y = 80 + (selection * 60);
+    int box_y = 100 + (selection * 60);
     draw_rect(80, box_y, 160, 40, yellow);
     
     // Draw Minesweeper option
-    draw_rect(85, 85, 150, 30, game_selection == MENU_MINEWEEPER ? white : gray);
-    draw_text(100, 95, "MINESWEEPER", black);
+    draw_rect(85, 105, 150, 30, game_selection == MENU_MINEWEEPER ? white : gray);
+    // You could add text rendering here
     
     // Draw Sudoku option  
-    draw_rect(85, 145, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
-    draw_text(130, 155, "SUDOKU", black);
+    draw_rect(85, 165, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
+    // You could add text rendering here
     
+    // Draw title text
+    draw_text(100, 115, "MINESWEEPER", black);
+    draw_text(130, 175, "SUDOKU", black);
+    
+    // Draw instructions
+    draw_text(116, 20, "SELECT GAME", pink);    // centered at top
+
     *VGA_ctrl = 1; // Kick DMA to update screen
-}
-
-// Add this function to menu.c
-SudokuDifficulty get_selected_difficulty_from_switches(void) {
-    volatile int *SWITCHES = (volatile int *) SWITCH_base;
-    int switches = *SWITCHES;
-
-    // Use SW1, SW2, SW3 for difficulty selection
-    if (switches & (1 << SW_l3)) return HARD;    // SW3
-    if (switches & (1 << SW_l2)) return MEDIUM;  // SW2  
-    if (switches & (1 << SW_l1)) return EASY;    // SW1
-    return EASY; // default
 }
 
 int handle_menu_input(void) {
     int current_switches = *SWITCHES;
     int current_keys     = *keys1;
 
-    //static int last_switches;
+    static int last_switches;
     static int last_keys;
     static int seeded = 0;
 
-
     /* seed previous state on first call to avoid a false/missed edge */
     if (!seeded) {
-        //last_switches = current_switches;
+        last_switches = current_switches;
         last_keys     = current_keys;
         seeded        = 1;
     }
@@ -125,7 +112,7 @@ int handle_menu_input(void) {
         int press_edge = (prev_bit == 1) && (curr_bit == 0);
 
         if (press_edge) {
-            //last_switches = current_switches;
+            last_switches = current_switches;
             last_keys     = current_keys;
 
             if (game_selection == MENU_MINEWEEPER) {
@@ -136,7 +123,7 @@ int handle_menu_input(void) {
         }
     }
 
-    //last_switches = current_switches;
+    last_switches = current_switches;
     last_keys     = current_keys;
 
     return MENU_STATE_MAIN;
@@ -230,33 +217,56 @@ void run_sudoku(void) {
 
     if (action != INPUT_NONE) {
         sudoku_update(&game, action);
-        sudoku_check_win(&game);
-        needs_redraw = 1; // Always redraw after any action!
+        needs_redraw = 1;
     }
 
-    uint32_t sig =
-        (uint32_t)game.selected_col |
-        ((uint32_t)game.selected_row << 8) |
-        ((uint32_t)game.state        << 16);
+    // Only check for win/loss after the user submits (KEY1) and board is full
+    if (sudoku_is_full(&game) && game.state == GAME_RUNNING) {
+        // Show "Press KEY1 to check" message (if you want)
+        sudoku_render_vga(&game); // draws the full board and (optionally) "Press KEY1 to check"
 
-    if (needs_redraw || sig != last_sig) {
-        sudoku_render_vga(&game);
-        last_sig = sig;
-    }
-        // Wait for KEY1 press edge to return to menu if finished
-        int curr = *keys;
-        int was_pressed = !(prev_keys & KEY_MASK);
-        int is_pressed  = !(curr      & KEY_MASK);
-        int key1_press_edge = (!was_pressed && is_pressed);
+        // Wait for KEY1 press
+        int prev_keys = *keys;
+        while (1) {
+            int curr_keys = *keys;
+            int was_pressed = !(prev_keys & KEY_MASK);
+            int is_pressed  = !(curr_keys & KEY_MASK);
+            int key1_press_edge = (!was_pressed && is_pressed);
 
-        if ((game.state == GAME_WON || game.state == GAME_LOST) && key1_press_edge) {
-            menu_state = MENU_STATE_MAIN;
-            return;
+            if (key1_press_edge) {
+                sudoku_check_win(&game); // Now check for win/loss
+                needs_redraw = 1;
+                break;
+            }
+            prev_keys = curr_keys;
+            delay(1);
         }
-        prev_keys = curr;
-
-        delay(1);
     }
+
+    if (needs_redraw) {
+        sudoku_render_vga(&game);
+    }
+
+    // Wait for KEY1 to return to menu after win/loss
+    if ((game.state == GAME_WON || game.state == GAME_LOST)) {
+        int prev_keys = *keys;
+        while (1) {
+            int curr_keys = *keys;
+            int was_pressed = !(prev_keys & KEY_MASK);
+            int is_pressed  = !(curr_keys & KEY_MASK);
+            int key1_press_edge = (!was_pressed && is_pressed);
+
+            if (key1_press_edge) {
+                menu_state = MENU_STATE_MAIN;
+                return;
+            }
+            prev_keys = curr_keys;
+            delay(1);
+        }
+    }
+
+    delay(1);
+}
 }
 
 void delay(int ms){
@@ -267,3 +277,6 @@ void delay(int ms){
     }
 }
 
+void test(void) {
+    // temporary stub
+}

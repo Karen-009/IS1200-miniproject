@@ -56,6 +56,7 @@ typedef struct {
 void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty); 
 void sudoku_update(SudokuGame *game, InputAction action);
 int sudoku_check_win(SudokuGame *game);
+int sudoku_is_full(const SudokuGame *game);
 void sudoku_play(void);
 
 // VGA rendering function & input fot DTEKV board

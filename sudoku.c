@@ -177,6 +177,14 @@ int sudoku_check_win(SudokuGame *game) {
     return 1;
 }
 
+int sudoku_is_full(const SudokuGame *game) {
+    for (int row = 0; row < SUDOKU_SIZE; ++row)
+        for (int col = 0; col < SUDOKU_SIZE; ++col)
+            if (game->grid.cells[row][col].value == 0)
+                return 0;
+    return 1;
+}
+
 // For testing purposes, prints the Sudoku grid to console
 void print_sudoku(SudokuGame *game) {
     for (int r = 0; r < 9; r++) {

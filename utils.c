@@ -47,3 +47,5 @@ void handle_interrupt(void) {}
 int abs(int n) {
     return (n < 0) ? -n : n;
 }
+
+void handle_exception(void) { while(1); }

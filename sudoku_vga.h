@@ -26,6 +26,7 @@ void draw_cursor(const SudokuGame *game);
 
 // End game screens 
 void draw_game_over(const SudokuGame *game);
+void draw_text(int x, int y, const char *text, unsigned char color);
 
 // Input and cursor movement (to be called from main loop)
 void handle_digit_entry(SudokuGame *game); 
