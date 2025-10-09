@@ -368,36 +368,6 @@ void wait_key_release_all(void) {
     }
 }
 
-
-Difficulty choose_difficulty_from_switches(void) {
-    Difficulty selected = EASY;
-    uint32_t prev_keys = read_keys();
-    
-    while (1) {
-        uint32_t sw = read_switches();
-        uint32_t keys = read_keys();
-        
-        // Update selection based on switches
-        if (sw & SW_MASK(SW_l1)) selected = EASY;
-        if (sw & SW_MASK(SW_l2)) selected = MEDIUM;
-        if (sw & SW_MASK(SW_l3)) selected = HARD;
-        
-        // Draw current selection
-        draw_difficulty_screen(selected);
-        
-        // Check for confirmation (KEY1 press)
-        uint32_t key_pressed = keys & (1u << KEY_enter);
-        uint32_t prev_key_pressed = prev_keys & (1u << KEY_enter);
-        
-        if (key_pressed && !prev_key_pressed) {
-            return selected; // Confirmed!
-        }
-        
-        prev_keys = keys;
-        busy_wait(30000);
-    }
-}
-
 /*int minesweeper(void) {
     // small startup delay
     busy_wait(100000);
@@ -476,17 +446,20 @@ Difficulty choose_difficulty_from_switches(void) {
 }*/
 
 /* main game loop */
+// minesweeper2.c - Replace the minesweeper function
+
 int minesweeper(void) {
     busy_wait(100000);
 
-    Difficulty diff = choose_difficulty_from_switches();
+    // Get difficulty from main menu selection instead of choosing here
+    Difficulty diff = get_selected_difficulty_from_switches();
     start_new_game(diff);
     render_board();
 
     uint32_t prev_keys = 0;
     int needs_redraw = 1;
     int game_over_counter = 0;
-    const int GAME_OVER_DELAY = 150; // Adjust for delay duration
+    const int GAME_OVER_DELAY = 150;
 
     while (1) {
         if (needs_redraw) {
@@ -498,21 +471,19 @@ int minesweeper(void) {
         if (game_over != 0) {
             game_over_counter++;
             
-            // Show final state for the delay period
             if (game_over_counter <= GAME_OVER_DELAY) {
-                // Optional: Add a game over message
                 if (game_over == 1) {
                     draw_text(SCREEN_W/2 - 40, SCREEN_H/2, "GAME OVER", red);
                 } else {
                     draw_text(SCREEN_W/2 - 40, SCREEN_H/2, "YOU WIN!", green);
                 }
             } else {
-                // Time's up - return to main menu
+                // Return to main menu
                 menu_state = MENU_STATE_MAIN;
                 return 0;
             }
             
-            busy_wait(50000); // Longer delay during game over
+            busy_wait(50000);
             continue;
         }
 
