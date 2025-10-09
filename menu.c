@@ -91,13 +91,13 @@ int handle_menu_input(void) {
     int current_switches = *SWITCHES;
     int current_keys     = *keys1;
 
-    static int last_switches;
+    //static int last_switches;
     static int last_keys;
     static int seeded = 0;
 
     /* seed previous state on first call to avoid a false/missed edge */
     if (!seeded) {
-        last_switches = current_switches;
+        //last_switches = current_switches;
         last_keys     = current_keys;
         seeded        = 1;
     }
@@ -116,7 +116,7 @@ int handle_menu_input(void) {
         int press_edge = (prev_bit == 1) && (curr_bit == 0);
 
         if (press_edge) {
-            last_switches = current_switches;
+            //last_switches = current_switches;
             last_keys     = current_keys;
 
             if (game_selection == MENU_MINEWEEPER) {
@@ -127,7 +127,7 @@ int handle_menu_input(void) {
         }
     }
 
-    last_switches = current_switches;
+    //last_switches = current_switches;
     last_keys     = current_keys;
 
     return MENU_STATE_MAIN;
