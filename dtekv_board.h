@@ -2,7 +2,8 @@
 #define DTEKV_BOARD_H
 #include <stdlib.h>
 
-int minesweeper(void){}
+int minesweeper(void);
+void test(void);
 
 // Memory Addresses for VGA
 #define VGA_Buffer 0x8000000

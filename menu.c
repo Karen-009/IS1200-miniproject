@@ -23,7 +23,7 @@ int font_index(char c) {
 }
 
 void draw_char(int x, int y, char c, unsigned char color) {
-    if (c < 'A' || c > 'Z') return 0; // Unsupported character
+    if (c < 'A' || c > 'Z') return; // Unsupported character
 
     int index = font_index(c);
     for (int row = 0; row < 8; row++) {
@@ -61,9 +61,9 @@ void draw_main_menu(int selection) {
     draw_rect(0, 0, 320, 240, light_blue);
     
     // Draw title
-    char* title = "SELECT GAME";
-    int title_x = 120;
-    int title_y = 50;
+    //char* title = "SELECT GAME";
+   // int title_x = 120;
+    //int title_y = 50;
     
     // Draw selection box
     int box_y = 100 + (selection * 60);
@@ -241,9 +241,13 @@ void run_sudoku(void) {
 }
 
 void delay(int ms){
-    volatile int j, j;
+    volatile int i, j;
     for (i = 0; i < ms * 10000; i++)
     {
         j = i;
-    }
+    }  
+}
+
+void test(void) {
+    // temporary stub
 }
