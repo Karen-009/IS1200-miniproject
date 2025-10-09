@@ -370,7 +370,7 @@ static Difficulty choose_difficulty_from_switches(void) {
 }
 
 /* main game loop */
-int minesweeper2(void) {
+int minesweeper(void) {
     // small startup delay
     busy_wait(100000);
 
