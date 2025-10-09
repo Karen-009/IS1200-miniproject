@@ -7,8 +7,6 @@
 #include "sudoku_puzzles.h"
 #include "sudoku_vga.h"
 
-
-
 // Menu states
 #define MENU_STATE_MAIN 0
 #define MENU_STATE_MINEWEEPER 1

@@ -136,7 +136,7 @@ int handle_menu_input(void) {
 
 void run_minesweeper(void) {
     // Initialize and run minesweeper game
-    minesweeper();
+    test();
 }
 
 SudokuDifficulty get_selected_difficulty(void) {
@@ -237,5 +237,12 @@ void run_sudoku(void) {
         prev_keys = curr;
 
         delay(1);
+    }
+}
+
+void delay(int ms) {
+    volatile int i, j;
+    for (i = 0; i < ms * 10000; i++) {
+        j = i; // prevent optimization
     }
 }
