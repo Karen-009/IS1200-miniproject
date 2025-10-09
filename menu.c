@@ -239,10 +239,3 @@ void run_sudoku(void) {
         delay(1);
     }
 }
-
-void delay(int ms) {
-    volatile int i, j;
-    for (i = 0; i < ms * 10000; i++) {
-        j = i; // prevent optimization
-    }
-}
