@@ -35,7 +35,4 @@ void delay(int ms);
 extern int menu_state;
 extern int game_selection;
 
-void handle_interrupt(void) {
-}
-
 #endif
