@@ -241,7 +241,7 @@ void run_sudoku(void) {
 }
 
 void delay(int ms){
-    volatile int j, j;
+    volatile int i, j;
     for (i = 0; i < ms * 10000; i++)
     {
         j = i;
