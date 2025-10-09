@@ -2,7 +2,7 @@
 #define MAIN_MENU_H
 
 #include "sudoku.h"
-#include "dtekv_board.h"  // Uncomment when you have Sudoku header
+#include "dtekv_board.h"
 #include "sudoku_input_vga.h"
 #include "sudoku_puzzles.h"
 #include "sudoku_vga.h"

@@ -4,6 +4,7 @@
 #include <stdlib.h> // For rand()
 #include <time.h> // For time tracking
 #include <string.h> // For memset (used to set a block of memory to a specific value, typically zero)
+#include "dtekv_board.h"
 
 // shuffle function to randomize puzzle selection
 void swap_rows(int grid[9][9], int row1, int row2) {  

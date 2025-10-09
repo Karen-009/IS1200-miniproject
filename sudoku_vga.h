@@ -1,6 +1,7 @@
 #ifndef SUDOKU_VGA_H
 #define SUDOKU_VGA_H
 #include "sudoku.h"
+#include "dtekv_board.h"
 
 void sudoku_render_vga(const SudokuGame *game);
 
