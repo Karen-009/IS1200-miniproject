@@ -136,7 +136,7 @@ int handle_menu_input(void) {
 
 void run_minesweeper(void) {
     // Initialize and run minesweeper game
-    test();
+    minesweeper2();
 }
 
 SudokuDifficulty get_selected_difficulty(void) {
