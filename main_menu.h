@@ -28,8 +28,6 @@ int handle_menu_input(void);
 void run_minesweeper(void);
 void run_sudoku(void);
 void delay(int ms);
-void minesweeper2(void){};
-
 // Global variables
 extern int menu_state;
 extern int game_selection;
