@@ -42,6 +42,7 @@ static uint8_t state_grid[GRID_MAX_ROWS][GRID_MAX_COLS];
 static int g_rows = 0, g_cols = 0, g_mines = 0;
 static int revealed_count = 0;
 static int game_over = 0; // 0 running, 1 lost, 2 won
+static int first_move = 1; 
 
 /* Cursor */
 static int cursor_r = 0, cursor_c = 0;
@@ -216,11 +217,28 @@ static void clear_board_state(void) {
 }
 
 /* place mines randomly */
-static void place_mines(int rows, int cols, int mines) {
+static void place_mines(int rows, int cols, int mines, int safe_r, int safe_c) {
     int placed = 0;
+    mine_grid[safe_r][safe_c] = 0; // Ensure first click is not a mine
+
+    for (int dr = -1; dr <= 1; ++dr) {
+        for (int dc = -1; dc <= 1; ++dc) {
+            int rr = safe_r + dr, cc = safe_c + dc;
+            if (rr >= 0 && rr < rows && cc >= 0 && cc < cols) {
+                mine_grid[rr][cc] = 0; // Clear adjacent cells too
+            }
+        }
+    }
+
     while (placed < mines) {
         uint32_t r = rand32() % rows;
         uint32_t c = rand32() % cols;
+
+        // Skip if this is the safe cell or adjacent to it
+        if (abs((int)r - safe_r) <= 1 && abs((int)c - safe_c) <= 1) {
+            continue;
+        }
+
         if (!mine_grid[r][c]) {
             mine_grid[r][c] = 1;
             placed++;
@@ -294,6 +312,14 @@ static void reveal_cell(int r, int c) {
     if (r < 0 || r >= g_rows || c < 0 || c >= g_cols) return;
     if (state_grid[r][c] == REVEALED) return;
     if (state_grid[r][c] == FLAGGED) return;
+
+    //Place mines at first reveal to ensure first cell is not a mine
+    if (first_move) {
+        place_mines(g_rows, g_cols, g_mines, r, c);
+        compute_adj(g_rows, g_cols);
+        first_move = 0;
+    }
+
     if (mine_grid[r][c]) {
         // stepped on mine
         game_over = 1;
@@ -303,15 +329,16 @@ static void reveal_cell(int r, int c) {
                 if (mine_grid[rr][cc]) state_grid[rr][cc] = REVEALED;
         return;
     }
-    if (adj[r][c] == 0) flood_reveal(r, c);
-    else {
+
+    if (adj[r][c] == 0) {
+        flood_reveal(r, c);
+    } else {
         state_grid[r][c] = REVEALED;
         revealed_count++;
     }
     int total = g_rows * g_cols;
     if (revealed_count >= total - g_mines) {
         game_over = 2;
-        // optionally reveal mines as flagged
     }
 }
 
@@ -325,21 +352,22 @@ static void toggle_flag(int r, int c) {
 
 /* initialize new game at difficulty */
 static void start_new_game(Difficulty d) {
+    first_move = 1;
     clear_board_state();
+
     LevelSpec spec = LEVELS[d];
+
     g_cols = spec.cols;
     g_rows = spec.rows;
     g_mines = spec.mines;
     if (g_cols > GRID_MAX_COLS) g_cols = GRID_MAX_COLS;
     if (g_rows > GRID_MAX_ROWS) g_rows = GRID_MAX_ROWS;
+
     // center cursor
     cursor_r = g_rows / 2;
     cursor_c = g_cols / 2;
     revealed_count = 0;
     game_over = 0;
-    // place mines and compute adj
-    place_mines(g_rows, g_cols, g_mines);
-    compute_adj(g_rows, g_cols);
 }
 
 /* read switches */
@@ -369,7 +397,16 @@ static Difficulty choose_difficulty_from_switches(void) {
     return EASY;
 }
 
-/* main game loop */
+// Temporary debug function - add this to minesweeper2.c
+static void debug_switches(uint32_t sw) {
+    // Print binary representation of switches
+    for (int i = 0; i < 10; i++) {
+        if (sw & (1 << i)) {
+            // This switch is ON
+        }
+    }
+}
+
 int minesweeper(void) {
     // small startup delay
     busy_wait(100000);
@@ -380,15 +417,21 @@ int minesweeper(void) {
     // initial render
     render_board();
 
-    // previous key snapshot for edge detection (we want press events)
+    // previous key snapshot for edge detection
     uint32_t prev_keys = 0;
 
     while (1) {
         // render every loop (simple)
         render_board();
+        int re_draw = 1;
+        if (re_draw) {
+            render_board();
+            re_draw = 0;
+        }
 
         // read inputs
         uint32_t sw = read_switches();
+        debug_switches(sw);  // Add this temporarily
         uint32_t keys = read_keys();
 
         /* movement: require the corresponding switch ON and key pressed (KEY_enter bit) */
@@ -418,7 +461,7 @@ int minesweeper(void) {
         // check for game over -> display final board and halt or restart if they press key
         if (game_over != 0) {
             render_board();
-            // small text-free indication: blink whole screen a few times
+            // blink screen
             for (int i = 0; i < 6; ++i) {
                 busy_wait(200000);
                 if (game_over == 1) fill_rect(0, 0, SCREEN_W, SCREEN_H, light_red);
