@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <dtekv_board.h>
+#include "dtekv_board.h"
 
 /* Memory mapped IO helpers */
 #define SW_REG  ((volatile uint32_t*) SWITCH_BASE)
