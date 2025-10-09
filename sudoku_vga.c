@@ -1,4 +1,4 @@
-// Contains VGA drawing functions - how to draw the board, numbers, highlights, cursor, timer, end game screens etc. 
+// Zunjee, Contains VGA drawing functions for Sudoku game
 
 #include "dtekv_board.h" 
 #include "sudoku_vga.h"
@@ -75,14 +75,13 @@ void draw_digit(int grid_x, int grid_y, int number, char color) {
     int pixel_y = GRID_ORIGIN_Y + grid_y * cell_size;
 
     // Center the 5x5 digit in the cell
-    int margin = (cell_size - 5*3) / 2; // scale = 3 px per "bit"
+    int margin = (cell_size - 5*3) / 2; 
     int start_x = pixel_x + margin;
     int start_y = pixel_y + margin;
 
     for (int row = 0; row < 5; row++) {
         for (int col = 0; col < 5; col++) {
             if ((digits_compact[number][row] >> (col)) & 1) {
-                // 3x3 block per "pixel"
                 for(int dx=0; dx<3; dx++)
                     for(int dy=0; dy<3; dy++)
                         draw_pixel(start_x + col*3 + dx, start_y + row*3 + dy, color);
@@ -107,13 +106,13 @@ void draw_sudoku_cell(int cell_x, int cell_y, const SudokuGame *game) {
 
     // Draw cell border
     for (int i = 0; i < cell_size; i++) {
-        draw_pixel(screen_x + i, screen_y, dark_gray); // Top border
-        draw_pixel(screen_x, screen_y + i, dark_gray); // Left border
-        draw_pixel(screen_x + i, screen_y + cell_size - 1, dark_gray); // Bottom border
-        draw_pixel(screen_x + cell_size - 1, screen_y + i, dark_gray); // Right border
+        draw_pixel(screen_x + i, screen_y, dark_gray); 
+        draw_pixel(screen_x, screen_y + i, dark_gray); 
+        draw_pixel(screen_x + i, screen_y + cell_size - 1, dark_gray); 
+        draw_pixel(screen_x + cell_size - 1, screen_y + i, dark_gray); 
     }
 
-    // Draw number if present
+    // Draw digit if present
     int value = game->grid.cells[cell_y][cell_x].value; // Note: row = y, col = x
     if (value != 0) {
         char num_color = game->grid.cells[cell_y][cell_x].fixed ? black : blue; // Fixed numbers in black, user entries in blue
@@ -205,7 +204,7 @@ void sudoku_render_vga(const SudokuGame *game) {
     }
 
     // Trigger VGA DMA to update the screen
-    *VGA_ctrl = 1; // Start DMA transfer
+    *VGA_ctrl = 1; 
 }
 
 void draw_game_over(const SudokuGame *game) {

@@ -1,3 +1,4 @@
+// Minimal implementations of standard library functions for embedded systems
 #include <stdint.h>
 
 static unsigned int seed = 1;

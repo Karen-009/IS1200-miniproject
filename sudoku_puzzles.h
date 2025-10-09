@@ -1,6 +1,7 @@
+// Zunjee , sudoku puzzles header file
 #ifndef SUDOKU_PUZZLES_H
 #define SUDOKU_PUZZLES_H
 
-extern const int solved_grid[9][9];
+extern const int solved_grid[9][9]; // A sample solved Sudoku grid
 
 #endif

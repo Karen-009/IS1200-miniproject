@@ -1,9 +1,10 @@
+// Zunjee, reading input from DTEKV switches and keys
 #include "sudoku_input_vga.h"
 #include "dtekv_board.h"
 
 // Switch and Key Memory Addresses
 volatile int *SWITCHES = (volatile int *) SWITCH_base;
-volatile int *keys1    = (volatile int *) KEY1_base; // address of KEY1
+volatile int *keys1    = (volatile int *) KEY1_base; 
 
 // Debounce state variables, only reacts to new KEY1/SWITCHES presses
 static int prev_switches = 0;  

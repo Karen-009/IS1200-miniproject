@@ -21,9 +21,6 @@ void draw_bold_grid_lines(void);    // Draw bold lines for 3x3 boxes
 // Cursor and highlights
 void draw_cursor(const SudokuGame *game);
 
-// Timer 
-//void draw_timer(const SudokuGame *game);
-
 // End game screens 
 void draw_game_over(const SudokuGame *game);
 void draw_text(int x, int y, const char *text, unsigned char color);

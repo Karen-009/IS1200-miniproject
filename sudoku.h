@@ -1,7 +1,6 @@
-//header file for sudoku.c
+// Zunjee, header file for sudoku.c
 #ifndef SUDOKU_H    //  correct and prevents multiple inclusions
 #define SUDOKU_H    // SUDOKU_H, a unique identifier for this header file
-#include <time.h> // For time tracking
 #define SUDOKU_SIZE 9  // Define the size of the Sudoku grid
 
 typedef struct {
@@ -43,13 +42,9 @@ typedef struct {
     int solution[SUDOKU_SIZE][SUDOKU_SIZE]; // The solution grid for validation
     int selected_row; // Currently selected row
     int selected_col; // Currently selected column
-    time_t start_time; // Time when the game started
-    time_t stop_time; // Time when the game stopped
     GameState state; // Current game state
     double elapsed_time; // Time elapsed since the start of the game
     int difficulty; // Difficulty level, 0 = easy, 1 = medium, 2 = hard
-    int show_timer; // 1 if timer is shown on VGA, 0 otherwise
-    int score; // Calculate score to show on VGA 
 } SudokuGame;
 
 // Logic functions
@@ -67,6 +62,5 @@ InputAction get_input_vga(void);    // Read switches and keys and map to InputAc
 void print_sudoku(SudokuGame *game);
 
 void handle_interrupt(void);
-
 
 #endif 

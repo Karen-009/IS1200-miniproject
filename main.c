@@ -13,7 +13,7 @@ int main() {
                     last_selection = game_selection;
                 }
                 menu_state = handle_menu_input();
-                delay(1); // Small delay for responsive input, no flicker
+                delay(1); 
                 break;
 
             case MENU_STATE_MINEWEEPER:

@@ -1,7 +1,8 @@
+// Zunjee, updates the game state based on input actions
 #include "sudoku.h"
 #include "dtekv_board.h"
 
-// This function updates the game state based on input action, called from main loop
+// Updates the game state based on input action, called from main loop
 void sudoku_update(SudokuGame *game, InputAction action) {
     if (game->state != GAME_RUNNING) return;
 

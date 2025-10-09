@@ -19,7 +19,7 @@ int game_selection = MENU_MINEWEEPER;
 int font_index(char c) {
     if (c >= 'A' && c <= 'Z') 
         return c - 'A';
-    return 0; // A as default
+    return 0; 
 }
 
 void draw_char(int x, int y, char c, unsigned char color) {
@@ -67,18 +67,16 @@ void draw_main_menu(int selection) {
     
     // Draw Minesweeper option
     draw_rect(85, 105, 150, 30, game_selection == MENU_MINEWEEPER ? white : gray);
-    // You could add text rendering here
     
     // Draw Sudoku option  
     draw_rect(85, 165, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
-    // You could add text rendering here
     
     // Draw title text
     draw_text(100, 115, "MINESWEEPER", black);
     draw_text(130, 175, "SUDOKU", black);
     
-    // Draw instructions
-    draw_text(116, 20, "SELECT GAME", pink);    // centered at top
+    // Draw select game instruction
+    draw_text(116, 20, "SELECT GAME", pink); 
 
     *VGA_ctrl = 1; // Kick DMA to update screen
 }
@@ -137,11 +135,10 @@ void run_minesweeper(void) {
 void run_sudoku(void) {
     SudokuGame game;
 
-    // Entropy collection for RNG seed
     volatile int *keys = (volatile int *) KEY1_base;
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
-    const int KEY_MASK = (1 << KEY_enter);  // KEY1 bit from dtekv_board.h
-    int prev_keys = *keys;                  // init edge detector
+    const int KEY_MASK = (1 << KEY_enter);  
+    int prev_keys = *keys;                  
     unsigned seed = 0x6D2B79F5u;
 
     while (1) {
@@ -161,10 +158,10 @@ void run_sudoku(void) {
 
         if (key1_press_edge) {
             prev_keys = curr;
-            break; // Confirm and continue
+            break; 
         }
         prev_keys = curr;
-        delay(5); // Small delay for debounce and flicker prevention
+        delay(5); 
     }
 
     // Seed RNG here so each Sudoku launch is fresh/random
@@ -201,8 +198,7 @@ void run_sudoku(void) {
 
     // Only check for win/loss after the user submits (KEY1) and board is full
     if (sudoku_is_full(&game) && game.state == GAME_RUNNING) {
-        // Show "Press KEY1 to check" message
-        sudoku_render_vga(&game); // Draws the full board "Press KEY1 to check"
+        sudoku_render_vga(&game); 
 
         // Wait for KEY1 press
         int prev_keys = *keys;
