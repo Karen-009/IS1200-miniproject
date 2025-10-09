@@ -30,3 +30,8 @@ int main() {
 
     return 0;
 }
+
+void handle_interrupt(void) {
+    // Basic interrupt handler
+    asm volatile("mret");
+}
