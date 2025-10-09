@@ -3,6 +3,7 @@
 #include "dtekv_board.h"
 #include "main_menu.h"
 #include "minesweeper.h"
+#include "sudoku_vga.h"
 
 extern int menu_state;
 extern void draw_text(int x, int y, const char *text, uint8_t color);
@@ -331,12 +332,12 @@ void toggle_flag(int r, int c) {
     else if (state_grid[r][c] == FLAGGED) state_grid[r][c] = HIDDEN;
 }
 
-void start_new_game(Difficulty d) {
+void start_new_game(SudokuDifficulty d) {
     first_move = 1;
     clear_board_state();
 
-    LevelSpec spec = LEVELS[d];
-
+    int diff_index = (int)d;
+    LevelSpec spec = LEVELS[diff_index];
     g_cols = spec.cols;
     g_rows = spec.rows;
     g_mines = spec.mines;
@@ -366,19 +367,6 @@ void wait_key_release_all(void) {
     while (read_keys() != 0) {
         busy_wait(1000);
     }
-}
-
-void draw_game_over(const SudokuGame *game) {
-    if (game->state == GAME_LOST) {
-        // Draw "GAME OVER" text
-        draw_text(120, 110, "GAME OVER", red);
-    } else if (game->state == GAME_WON) {
-        // Draw "YOU WIN" text  
-        draw_text(130, 110, "YOU WIN", green);
-    }
-    
-    // Add "Press KEY1 to continue" message
-    draw_text(80, 130, "Press KEY1 to continue", black);
 }
 
 /*int minesweeper(void) {
@@ -465,7 +453,7 @@ int minesweeper(void) {
     busy_wait(100000);
 
     // Get difficulty from main menu selection instead of choosing here
-    Difficulty diff = get_selected_difficulty_from_switches();
+    SudokuDifficulty diff = get_selected_difficulty_from_switches();
     start_new_game(diff);
     render_board();
 
