@@ -443,5 +443,3 @@ int minesweeper2(void) {
 
     return 0;
 }
-
-void handle_interrupt(){}
