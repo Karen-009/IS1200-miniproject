@@ -1,6 +1,6 @@
 #include <stdint.h> // For uint32_t which is used in run_sudoku to track state changes
 #include "main_menu.h"
-#include "dtekv_board.h"  // Uncomment when you have Sudoku header
+#include "dtekv_board.h"
 #include "sudoku_input_vga.h"
 #include "sudoku_puzzles.h"
 #include "sudoku_vga.h"
@@ -19,11 +19,11 @@ int game_selection = MENU_MINEWEEPER;
 int font_index(char c) {
     if (c >= 'A' && c <= 'Z') 
         return c - 'A';
-    return 0; // Default to 'A' for unsupported characters
+    return 0; // A as default
 }
 
 void draw_char(int x, int y, char c, unsigned char color) {
-    if (c < 'A' || c > 'Z') return; // Unsupported character
+    if (c < 'A' || c > 'Z') return;
 
     int index = font_index(c);
     for (int row = 0; row < 8; row++) {
@@ -91,21 +91,21 @@ int handle_menu_input(void) {
     static int last_keys;
     static int seeded = 0;
 
-    /* seed previous state on first call to avoid a false/missed edge */
+    // Seed previous state on first call to avoid a false/missed edge
     if (!seeded) {
         last_switches = current_switches;
         last_keys     = current_keys;
         seeded        = 1;
     }
 
-    /* SW0 selects which game is highlighted */
+    // SW0 selects which game is highlighted
     if (current_switches & (1 << SW_SELECT_GAME)) {
         game_selection = MENU_SUDOKU;
     } else {
         game_selection = MENU_MINEWEEPER;
     }
 
-    /* KEY1 (KEY_enter) is active-low: pressed = 0, released = 1 */
+    // KEY1 (KEY_enter) is active-low: pressed = 0, released = 1 
     {
         int prev_bit = (last_keys    >> KEY_enter) & 1;
         int curr_bit = (current_keys >> KEY_enter) & 1;
@@ -201,8 +201,8 @@ void run_sudoku(void) {
 
     // Only check for win/loss after the user submits (KEY1) and board is full
     if (sudoku_is_full(&game) && game.state == GAME_RUNNING) {
-        // Show "Press KEY1 to check" message (if you want)
-        sudoku_render_vga(&game); // draws the full board and (optionally) "Press KEY1 to check"
+        // Show "Press KEY1 to check" message
+        sudoku_render_vga(&game); // Draws the full board "Press KEY1 to check"
 
         // Wait for KEY1 press
         int prev_keys = *keys;
@@ -259,7 +259,6 @@ void delay(int ms){
 void test(void) {
 }
 
-// Add this function to menu.c
 SudokuDifficulty get_selected_difficulty_from_switches(void) {
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
     int switches = *SWITCHES;

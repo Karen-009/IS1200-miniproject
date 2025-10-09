@@ -23,7 +23,6 @@ int cursor_r = 0, cursor_c = 0;
 #define SCREEN_W 320
 #define SCREEN_H 240
 
-// Utility: treat defined switch numbers as bit indices
 #define SW_MASK(x) (1u << (x))
 
 static const LevelSpec LEVELS[3] = {
@@ -39,10 +38,8 @@ static int first_move = 1;
 static uint32_t lfsr = 0xACE1u;
 
 uint32_t rand32(void) {
-    /* 16-bit LFSR tapped at 16,14,13,11 (example) expanded to 32-bit mixing */
     uint32_t bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1u;
     lfsr = (lfsr >> 1) | (bit << 15);
-    /* mix to 32-bit */
     uint32_t r = lfsr;
     r ^= (r << 5);
     r ^= (r >> 11);
@@ -57,12 +54,10 @@ void busy_wait(volatile int n) {
     }
 }
 
-
 inline void put_pixel(int x, int y, uint8_t color) {
     if (x < 0 || x >= SCREEN_W || y < 0 || y >= SCREEN_H) return;
     VGA_FB[y * SCREEN_W + x] = color;
 }
-
 
 void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
     if (w <= 0 || h <= 0) return;
@@ -78,8 +73,8 @@ void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
 }
 
 static const uint8_t font5x7_digits[10][5] = {
-    {0x7E,0x81,0x81,0x81,0x7E}, // 0 - actually 8x7 but we'll use subset
-    {0x00,0x82,0xFF,0x80,0x00}, // 1 (approx)
+    {0x7E,0x81,0x81,0x81,0x7E}, // 0
+    {0x00,0x82,0xFF,0x80,0x00}, // 1 
     {0xE2,0x91,0x91,0x91,0x8E}, // 2
     {0x42,0x81,0x89,0x89,0x76}, // 3
     {0x18,0x14,0x12,0xFF,0x10}, // 4
@@ -108,11 +103,11 @@ void draw_digit_in_cell(int grid_r, int grid_c, int digit, uint8_t color) {
     }
 }
 
-// draw cell border
+// Draw cell border
 void draw_cell_border(int r, int c, uint8_t border_color) {
     int x0 = c * CELL_SIZE;
     int y0 = r * CELL_SIZE;
-    /* top and bottom */
+
     for (int x = x0; x < x0 + CELL_SIZE; ++x) {
         put_pixel(x, y0, border_color);
         put_pixel(x, y0 + CELL_SIZE - 1, border_color);
@@ -123,22 +118,22 @@ void draw_cell_border(int r, int c, uint8_t border_color) {
     }
 }
 
-// render whole board
+// Render whole board
 void render_board(void) {
-    /* background */
+    // Background
     fill_rect(0, 0, SCREEN_W, SCREEN_H, dark_blue);
 
-    /* draw cells */
+    // Draw cell
     for (int r = 0; r < g_rows; ++r) {
         for (int c = 0; c < g_cols; ++c) {
             int x0 = c * CELL_SIZE;
             int y0 = r * CELL_SIZE;
-            /* cell interior */
+            // Cell interior
             if (state_grid[r][c] == HIDDEN) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, dark_gray);
             } else if (state_grid[r][c] == FLAGGED) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, red);
-                /* small flag: 3x5 block */
+                // Flagg
                 int fx = x0 + (CELL_SIZE - 3) / 2;
                 int fy = y0 + (CELL_SIZE - 5) / 2;
                 fill_rect(fx, fy, 1, 5, white);
@@ -146,7 +141,7 @@ void render_board(void) {
             } else if (state_grid[r][c] == REVEALED) {
                 if (mine_grid[r][c]) {
                     fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_red);
-                    /* mine dot in center */
+                    //Mine
                     int cx = x0 + CELL_SIZE/2;
                     int cy = y0 + CELL_SIZE/2;
                     put_pixel(cx, cy, black);
@@ -157,7 +152,7 @@ void render_board(void) {
                 } else {
                     fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
                     if (adj[r][c] > 0) {
-                        /* choose color by number */
+                        //Number color
                         uint8_t col = blue;
                         switch (adj[r][c]) {
                             case 1: col = blue; break;
@@ -173,15 +168,14 @@ void render_board(void) {
                     }
                 }
             }
-            /* border */
             draw_cell_border(r, c, black);
         }
     }
 
-    // raw cursor (inverted border)
+    // Raw cursor (inverted border)
     int cx0 = cursor_c * CELL_SIZE;
     int cy0 = cursor_r * CELL_SIZE;
-    // draw a highlighted border
+    // Draw a highlighted border
     for (int x = cx0; x < cx0 + CELL_SIZE; ++x) {
         put_pixel(x, cy0, light_yellow);
         put_pixel(x, cy0 + CELL_SIZE - 1, light_yellow);
@@ -192,7 +186,7 @@ void render_board(void) {
     }
 }
 
-// initialize board arrays
+// Initialize board arrays
 void clear_board_state(void) {
     for (int r = 0; r < GRID_MAX_ROWS; ++r) {
         for (int c = 0; c < GRID_MAX_COLS; ++c) {
@@ -203,7 +197,7 @@ void clear_board_state(void) {
     }
 }
 
-// place mines randomly
+// Place mines randomly
 void place_mines(int rows, int cols, int mines, int safe_r, int safe_c) {
     int placed = 0;
     mine_grid[safe_r][safe_c] = 0; // Ensure first click is not a mine
@@ -256,8 +250,8 @@ void flood_reveal(int sr, int sc) {
     if (state_grid[sr][sc] == REVEALED || state_grid[sr][sc] == FLAGGED) return;
     if (mine_grid[sr][sc]) return;
 
-    // simple stack
-    int *stack_r = (int*)0; // We don't have malloc; use a static local buffer
+    // Simple stack for malloc etc.
+    int *stack_r = (int*)0; 
     static int st_r[GRID_MAX_ROWS * GRID_MAX_COLS];
     static int st_c[GRID_MAX_ROWS * GRID_MAX_COLS];
     stack_r = st_r;
@@ -304,9 +298,9 @@ void reveal_cell(int r, int c) {
     }
 
     if (mine_grid[r][c]) {
-        // stepped on mine
+        // Click on mine
         game_over = 1;
-        // reveal all mines
+        // Eeveal all mines
         for (int rr = 0; rr < g_rows; ++rr)
             for (int cc = 0; cc < g_cols; ++cc)
                 if (mine_grid[rr][cc]) state_grid[rr][cc] = REVEALED;
@@ -344,19 +338,19 @@ void start_new_game(SudokuDifficulty d) {
     if (g_cols > GRID_MAX_COLS) g_cols = GRID_MAX_COLS;
     if (g_rows > GRID_MAX_ROWS) g_rows = GRID_MAX_ROWS;
 
-    // center cursor
+    // Center cursor
     cursor_r = g_rows / 2;
     cursor_c = g_cols / 2;
     revealed_count = 0;
     game_over = 0;
 }
 
-// read switches
+// Read switches
 inline uint32_t read_switches(void) {
     return *SW_REG;
 }
 
-// read keys
+// Read keys
 inline uint32_t read_keys(void) {
     return *KEY_REG;
 }
@@ -369,90 +363,10 @@ void wait_key_release_all(void) {
     }
 }
 
-/*int minesweeper(void) {
-    // small startup delay
-    busy_wait(100000);
-
-    // pick difficulty at start
-    Difficulty diff = choose_difficulty_from_switches();
-    start_new_game(diff);
-    render_board();
-
-    // previous key snapshot for edge detection
-    uint32_t prev_keys = 0;
-
-    while (1) {
-        render_board();
-        int re_draw = 1;
-        if (re_draw) {
-            render_board();
-            re_draw = 0;
-        }
-
-        // read inputs
-        uint32_t sw = read_switches();
-        uint32_t keys = read_keys();
-
-        // movement: require the corresponding switch ON and key pressed (KEY_enter bit)
-        uint32_t key_pressed = keys & (1u << KEY_enter);
-        uint32_t prev_key_pressed = prev_keys & (1u << KEY_enter);
-
-        if (key_pressed && !prev_key_pressed) {
-            // on rising edge -- process moves/actions according to which switches are ON
-            if (sw & SW_MASK(SW_up)) {
-                if (cursor_r > 0) cursor_r--;
-            } else if (sw & SW_MASK(SW_down)) {
-                if (cursor_r < g_rows - 1) cursor_r++;
-            } else if (sw & SW_MASK(SW_left)) {
-                if (cursor_c > 0) cursor_c--;
-            } else if (sw & SW_MASK(SW_right)) {
-                if (cursor_c < g_cols - 1) cursor_c++;
-            } else if (sw & SW_MASK(SW_ACTION_1)) {
-                // toggle flag
-                toggle_flag(cursor_r, cursor_c);
-            } else if (sw & SW_MASK(SW_ACTION_2)) {
-                // reveal
-                reveal_cell(cursor_r, cursor_c);
-            }
-            // if user presses key with no switches, do nothing
-        }
-
-        // check for game over -> display final board and halt or restart if they press key
-        if (game_over != 0) {
-            render_board();
-            // blink screen
-            for (int i = 0; i < 6; ++i) {
-                busy_wait(200000);
-                if (game_over == 1) fill_rect(0, 0, SCREEN_W, SCREEN_H, light_red);
-                else fill_rect(0, 0, SCREEN_W, SCREEN_H, light_green);
-                busy_wait(200000);
-                render_board();
-            }
-            // wait for user to press KEY_enter to restart, using same difficulty switches
-            while (!(read_keys() & (1u << KEY_enter))) { busy_wait(1000); }
-            // wait release
-            wait_key_release_all();
-            diff = choose_difficulty_from_switches();
-            start_new_game(diff);
-            prev_keys = 0;
-            continue;
-        }
-
-        prev_keys = keys;
-        // small loop delay to throttle
-        busy_wait(30000);
-    }
-
-    return 0;
-}*/
-
-/* main game loop */
-// minesweeper2.c - Replace the minesweeper function
-
 int minesweeper(void) {
     busy_wait(100000);
 
-    // Get difficulty from main menu selection instead of choosing here
+    // Get difficulty from main menu selection
     SudokuDifficulty diff = get_selected_difficulty_from_switches();
     start_new_game(diff);
     render_board();
