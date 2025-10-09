@@ -19,7 +19,7 @@ typedef struct {
     int mines;
 } LevelSpec;
 
-/* External declarations for game state */
+// External declarations for game state
 extern uint8_t mine_grid[GRID_MAX_ROWS][GRID_MAX_COLS];
 extern uint8_t adj[GRID_MAX_ROWS][GRID_MAX_COLS];
 extern uint8_t state_grid[GRID_MAX_ROWS][GRID_MAX_COLS];
@@ -28,7 +28,7 @@ extern int revealed_count;
 extern int game_over;
 extern int cursor_r, cursor_c;
 
-/* Function declarations */
+// Function declarations
 
 int minesweeper(void);
 int abs(int n);

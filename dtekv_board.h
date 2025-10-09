@@ -59,7 +59,6 @@ void test(void);
 #define SW_ACTION_1 8   // toggle flag mode/ erase cell
 #define SW_ACTION_2 9 // reveal cell/ enter digit mode
 #define KEY_enter 0 // confirm action (when pressed reads as bit 0 in KEY1)
-#define KEY_exit 0  
 
 // 8x8 font for ASCII characters 'A' to 'Z', index 0='A', 25='Z'
 static const unsigned char font8x8_AZ[26][8] = {
