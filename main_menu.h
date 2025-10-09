@@ -1,3 +1,5 @@
+// Zunjee, Karen, Header file for main menu functionality
+
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 

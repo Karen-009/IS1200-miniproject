@@ -1,3 +1,5 @@
+// Karen, minesweeper header file
+
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
 

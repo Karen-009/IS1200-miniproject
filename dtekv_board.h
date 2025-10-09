@@ -1,3 +1,4 @@
+// Zunjee, Karen, Header file for DTEKV board specifics
 #ifndef DTEKV_BOARD_H
 #define DTEKV_BOARD_H
 #include <stdlib.h>

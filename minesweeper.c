@@ -1,3 +1,5 @@
+// Karen, minesweeper implementation file
+
 #include <stdint.h>
 #include <stddef.h>
 #include "dtekv_board.h"
