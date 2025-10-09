@@ -137,27 +137,7 @@ int handle_menu_input(void) {
 
 void run_minesweeper(void) {
     // Initialize and run minesweeper game
-    init_game(0);  // Start with easy difficulty
-    draw_board();
-    
-    while(1) {
-        handle_input();
-        
-        // Redraw on state change
-        static int last_state = 0;
-        int current_state = game.cursor_x | (game.cursor_y << 8) |
-                           (game.game_over << 16) | (game.game_won << 17);
-        
-        if(current_state != last_state) {
-            draw_board();
-            if(game.game_over || game.game_won) {
-                draw_gameover();
-            }
-            last_state = current_state;
-        }
-        
-        delay(1);
-    }
+    test();
 }
 
 SudokuDifficulty get_selected_difficulty(void) {

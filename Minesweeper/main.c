@@ -1,7 +1,7 @@
 # include "minesweeper.h"
 # include "dtekv_board.h"
 
-int main() {
+/*int main() {
     // Initialize random seed
     srand_custom(123456789);  // Or use a more dynamic seed if available
     
@@ -18,4 +18,4 @@ int main() {
     game_loop();
     
     return 0;
-}
+} */
