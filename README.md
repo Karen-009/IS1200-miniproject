@@ -11,9 +11,9 @@ KEY1: Press to start the highlighted game
 
 # General Controls 
 - Exit to Main Menu
-SW0: Turn ON, then press KEY1
+press KEY1 
 
-- Select Difficulty (at game start)
+- Select Difficulty (at game start for Sudoku)
 SW1: Easy
 SW2: Medium
 SW3: Hard
@@ -35,7 +35,7 @@ Multiple actions can be taken at the same time. For example, moving up a cell an
 - Sudoku 
 SW8: Erase cell 
 SW9: Cycle and enter digit
-To enter a digit in a cell, turn ON SW9 and press KEY1 repeatedly to cycle through digits 1-9 in the selected cell. The digit is set immediately. 
+To enter a digit in a cell, turn ON SW9 and press KEY1 repeatedly to cycle through digits 1-9 in the selected cell. The digit is set immediately. When entering the last digit, press KEY1 to get the game state (gameover or you win). 
 
 # Tips
 - Always turn OFF a switch before turning ON a new one. 
