@@ -45,4 +45,4 @@ int abs(int n) {
     return (n < 0) ? -n : n;
 }
 
-void handle_exception(void) { while(1); }
+void handle_exception(void) { }

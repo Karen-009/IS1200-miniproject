@@ -6,6 +6,7 @@
 #include "sudoku_input_vga.h"
 #include "sudoku_puzzles.h"
 #include "sudoku_vga.h"
+#include "minesweeper.h"
 
 
 SudokuDifficulty get_selected_difficulty_from_switches(void);

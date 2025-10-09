@@ -129,16 +129,6 @@ int handle_menu_input(void) {
     return MENU_STATE_MAIN;
 }
 
-void draw_difficulty_screen(SudokuDifficulty difficulty) {
-    draw_rect(0, 0, 320, 240, light_blue);
-    draw_text(60, 60, "SELECT DIFFICULTY:", pink);
-    draw_text(80, 110, (difficulty == EASY)   ? "> EASY"   : "  EASY",   (difficulty == EASY)   ? yellow : black);
-    draw_text(80, 150, (difficulty == MEDIUM) ? "> MEDIUM" : "  MEDIUM", (difficulty == MEDIUM) ? yellow : black);
-    draw_text(80, 190, (difficulty == HARD)   ? "> HARD"   : "  HARD",   (difficulty == HARD)   ? yellow : black);
-    draw_text(40, 210, "Set SW1/2/3, press KEY1 to confirm", black);
-    *VGA_ctrl = 1;
-}
-
 void run_minesweeper(void) {
     // Initialize and run minesweeper game
     minesweeper();
@@ -147,8 +137,6 @@ void run_minesweeper(void) {
 SudokuDifficulty get_selected_difficulty(void) {
     volatile int *SWITCHES = (volatile int *) SWITCH_base;
     int switches = *SWITCHES;
-
-    // Use the same bits your Sudoku main used (typically SW1..SW3)
     if (switches & (1 << SW_l3)) return HARD;    // SW3
     if (switches & (1 << SW_l2)) return MEDIUM;  // SW2
     if (switches & (1 << SW_l1)) return EASY;    // SW1

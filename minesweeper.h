@@ -2,9 +2,7 @@
 #define MINESWEEPER_H
 
 #include <stdint.h>
-
-/* Game configuration */
-typedef enum { E=0, M=1, H=2 } Difficulty;
+#include "sudoku.h"
 
 /* Game constants */
 #define CELL_SIZE 12
@@ -37,12 +35,12 @@ int abs(int n);
 void draw_text(int x, int y, const char *text, uint8_t color);
 
 // Game initialization
-void start_new_game(Difficulty d);
+void start_new_game(SudokuDifficulty d);
 void clear_board_state(void);
 void place_mines(int rows, int cols, int mines, int safe_r, int safe_c);
 void compute_adj(int rows, int cols);
 
-// Game logic
+// Game logics
 void reveal_cell(int r, int c);
 void toggle_flag(int r, int c);
 void flood_reveal(int sr, int sc);
@@ -53,9 +51,6 @@ void draw_cell_border(int r, int c, uint8_t border_color);
 void draw_digit_in_cell(int grid_r, int grid_c, int digit, uint8_t color);
 void draw_text(int x, int y, const char *text, uint8_t color);
 
-
-Difficulty choose_difficulty_from_switches(void);  
-void draw_difficulty_screen(Difficulty diff);
 
 // Utility functions
 uint32_t rand32(void);
