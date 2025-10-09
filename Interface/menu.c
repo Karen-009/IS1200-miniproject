@@ -1,6 +1,5 @@
 #include <stdint.h> // For uint32_t which is used in run_sudoku to track state changes
 #include "main_menu.h"
-#include "minesweeper.h"
 #include "dtekv_board.h"  // Uncomment when you have Sudoku header
 #include "sudoku_input_vga.h"
 #include "sudoku_puzzles.h"
