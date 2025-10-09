@@ -75,7 +75,7 @@ void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
 static const uint8_t font5x7_digits[10][5] = {
     {0x7E,0x81,0x81,0x81,0x7E}, // 0
     {0x00,0x82,0xFF,0x80,0x00}, // 1 
-    {0xE2,0x91,0x91,0x91,0x8E}, // 2
+    {0x3E,0x41,0x41,0x22,0x1C}, // 2
     {0x42,0x81,0x89,0x89,0x76}, // 3
     {0x18,0x14,0x12,0xFF,0x10}, // 4
     {0x4F,0x89,0x89,0x89,0x71}, // 5
@@ -121,7 +121,7 @@ void draw_cell_border(int r, int c, uint8_t border_color) {
 // Render whole board
 void render_board(void) {
     // Background
-    fill_rect(0, 0, SCREEN_W, SCREEN_H, dark_blue);
+    fill_rect(0, 0, SCREEN_W, SCREEN_H, light_blue);
 
     // Draw cell
     for (int r = 0; r < g_rows; ++r) {
@@ -136,11 +136,11 @@ void render_board(void) {
                 // Flagg
                 int fx = x0 + (CELL_SIZE - 3) / 2;
                 int fy = y0 + (CELL_SIZE - 5) / 2;
-                fill_rect(fx, fy, 1, 5, white);
-                fill_rect(fx+1, fy, 2, 3, yellow);
+                fill_rect(fx, fy, 1, 5, black);
+                fill_rect(fx+1, fy, 2, 3, red);
             } else if (state_grid[r][c] == REVEALED) {
                 if (mine_grid[r][c]) {
-                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_red);
+                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
                     //Mine
                     int cx = x0 + CELL_SIZE/2;
                     int cy = y0 + CELL_SIZE/2;
@@ -150,7 +150,7 @@ void render_board(void) {
                     put_pixel(cx, cy-1, black);
                     put_pixel(cx, cy+1, black);
                 } else {
-                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
+                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, dark_gray);
                     if (adj[r][c] > 0) {
                         //Number color
                         uint8_t col = blue;
