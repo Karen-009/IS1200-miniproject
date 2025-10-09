@@ -11,7 +11,7 @@ int main() {
             case MENU_STATE_MAIN:
                 draw_main_menu(game_selection);
                 menu_state = handle_menu_input();
-                delay(1);
+                delay(50);
                 break;
                 
             case MENU_STATE_MINEWEEPER:
