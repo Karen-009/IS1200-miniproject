@@ -134,15 +134,6 @@ void run_minesweeper(void) {
     minesweeper();
 }
 
-SudokuDifficulty get_selected_difficulty(void) {
-    volatile int *SWITCHES = (volatile int *) SWITCH_base;
-    int switches = *SWITCHES;
-    if (switches & (1 << SW_l3)) return HARD;    // SW3
-    if (switches & (1 << SW_l2)) return MEDIUM;  // SW2
-    if (switches & (1 << SW_l1)) return EASY;    // SW1
-    return EASY; // default
-}
-
 void run_sudoku(void) {
     SudokuGame game;
 
@@ -266,5 +257,15 @@ void delay(int ms){
 }
 
 void test(void) {
-    // temporary stub
+}
+
+// Add this function to menu.c
+SudokuDifficulty get_selected_difficulty_from_switches(void) {
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;
+    int switches = *SWITCHES;
+    
+    if (switches & (1 << SW_l3)) return HARD;    // SW3
+    if (switches & (1 << SW_l2)) return MEDIUM;  // SW2  
+    if (switches & (1 << SW_l1)) return EASY;    // SW1
+    return EASY; // default
 }
