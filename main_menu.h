@@ -7,6 +7,9 @@
 #include "sudoku_puzzles.h"
 #include "sudoku_vga.h"
 
+
+SudokuDifficulty get_selected_difficulty_from_switches(void);
+
 // Menu states
 #define MENU_STATE_MAIN 0
 #define MENU_STATE_MINEWEEPER 1

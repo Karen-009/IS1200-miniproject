@@ -15,6 +15,7 @@ extern volatile int  *keys1;
 int menu_state = MENU_STATE_MAIN;
 int game_selection = MENU_MINEWEEPER;
 
+
 // Map ASCII letters to font array index 0-25 (A-Z)
 int font_index(char c) {
     if (c >= 'A' && c <= 'Z') 
@@ -56,35 +57,42 @@ void init_main_menu(void) {
 }
 
 // Draw the main menu with current selection highlighted
+// menu.c - Replace the draw_main_menu function
+
+// menu.c - Replace the draw_main_menu function with this simplified version
+
 void draw_main_menu(int selection) {
     // Clear screen with background color
     draw_rect(0, 0, 320, 240, light_blue);
     
-    // Draw title
-    //char* title = "SELECT GAME";
-   // int title_x = 120;
-    //int title_y = 50;
+    // Draw title "MENU" at the top
+    draw_text(140, 30, "MENU", pink);
     
     // Draw selection box
-    int box_y = 100 + (selection * 60);
+    int box_y = 80 + (selection * 60);
     draw_rect(80, box_y, 160, 40, yellow);
     
     // Draw Minesweeper option
-    draw_rect(85, 105, 150, 30, game_selection == MENU_MINEWEEPER ? white : gray);
-    // You could add text rendering here
+    draw_rect(85, 85, 150, 30, game_selection == MENU_MINEWEEPER ? white : gray);
+    draw_text(100, 95, "MINESWEEPER", black);
     
     // Draw Sudoku option  
-    draw_rect(85, 165, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
-    // You could add text rendering here
+    draw_rect(85, 145, 150, 30, game_selection == MENU_SUDOKU ? white : gray);
+    draw_text(130, 155, "SUDOKU", black);
     
-    // Draw title text
-    draw_text(100, 115, "MINESWEEPER", black);
-    draw_text(130, 175, "SUDOKU", black);
-    
-    // Draw instructions
-    draw_text(116, 20, "SELECT GAME", pink);    // centered at top
-
     *VGA_ctrl = 1; // Kick DMA to update screen
+}
+
+// Add this function to menu.c
+SudokuDifficulty get_selected_difficulty_from_switches(void) {
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;
+    int switches = *SWITCHES;
+
+    // Use SW1, SW2, SW3 for difficulty selection
+    if (switches & (1 << SW_l3)) return HARD;    // SW3
+    if (switches & (1 << SW_l2)) return MEDIUM;  // SW2  
+    if (switches & (1 << SW_l1)) return EASY;    // SW1
+    return EASY; // default
 }
 
 int handle_menu_input(void) {
@@ -94,6 +102,7 @@ int handle_menu_input(void) {
     //static int last_switches;
     static int last_keys;
     static int seeded = 0;
+
 
     /* seed previous state on first call to avoid a false/missed edge */
     if (!seeded) {
@@ -258,6 +267,3 @@ void delay(int ms){
     }
 }
 
-void test(void) {
-    // temporary stub
-}
