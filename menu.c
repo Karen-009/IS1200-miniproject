@@ -171,7 +171,7 @@ void run_sudoku(void) {
     srand(seed);
 
     // Difficulty selection
-    SudokuDifficulty difficulty = get_selected_difficulty();
+    SudokuDifficulty difficulty = get_selected_difficulty_from_switches();
     sudoku_init(&game, difficulty);
 
     // Initial draw

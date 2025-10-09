@@ -44,5 +44,3 @@ unsigned int time(unsigned int *t) {
 int abs(int n) {
     return (n < 0) ? -n : n;
 }
-
-void handle_exception(void) { }
