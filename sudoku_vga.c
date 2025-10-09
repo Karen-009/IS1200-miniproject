@@ -11,8 +11,8 @@
 
 // Grid layout constants
 #define CELL_SIZE 24      // Each cell is 24x24 pixels
-#define GRID_ORIGIN_X 28 // Top-left corner of the grid
-#define GRID_ORIGIN_Y 20 // Leave space for timer/score at top
+#define GRID_ORIGIN_X 52  // Top-left corner of the grid
+#define GRID_ORIGIN_Y 12   // Top-left corner of the grid
 #define BOARD_SIZE (CELL_SIZE * SUDOKU_SIZE) // 216 pixels for 9 cells
 #define LINE_THICKNESS 2 // Thickness of grid lines
 
@@ -175,15 +175,6 @@ void draw_cursor(const SudokuGame *game) {
     }
 }
 
-// Draw "Game Over" or "You Win" screen by overlaying a rectangle in the center of the screen
-void draw_game_over(const SudokuGame *game) {
-    if (game->state == GAME_LOST) {
-        draw_rect(80, 100, 160, 40, red);   // Red rectangle for "Game Over"
-    } else if (game->state == GAME_WON) {
-        draw_rect(80, 100, 160, 40, green); // Green rectangle for "You Win"
-    }
-}
-
 // main render function to be called from main loop, draws the entire game state
 void sudoku_render_vga(const SudokuGame *game) {
     // Clear screen
@@ -197,8 +188,16 @@ void sudoku_render_vga(const SudokuGame *game) {
         draw_cursor(game);
     }
 
-    // Draw timer and score at the top
-    //draw_timer(game);
+    // Game end text
+    if (game->state == GAME_WON) {
+       int msg_x = 128;
+       int msg_y = 120;
+       draw_text(msg_x, msg_y, "YOU WON!", green);
+    } else if (game->state == GAME_LOST) {
+       int msg_x = 124;
+       int msg_y = 120;
+       draw_text(msg_x, msg_y, "GAME OVER", red);
+    }
 
     // Draw end game screens 
     if (game->state == GAME_WON || game->state == GAME_LOST) {
