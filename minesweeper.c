@@ -75,7 +75,7 @@ void fill_rect(int x0, int y0, int w, int h, uint8_t color) {
 static const uint8_t font5x7_digits[10][5] = {
     {0x7E,0x81,0x81,0x81,0x7E}, // 0
     {0x00,0x82,0xFF,0x80,0x00}, // 1 
-    {0x3E,0x41,0x41,0x22,0x1C}, // 2
+    {0x1F,0x10,0x1F,0x01,0x1F}, // 2
     {0x42,0x81,0x89,0x89,0x76}, // 3
     {0x18,0x14,0x12,0xFF,0x10}, // 4
     {0x4F,0x89,0x89,0x89,0x71}, // 5
@@ -130,7 +130,7 @@ void render_board(void) {
             int y0 = r * CELL_SIZE;
             // Cell interior
             if (state_grid[r][c] == HIDDEN) {
-                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, dark_gray);
+                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
             } else if (state_grid[r][c] == FLAGGED) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, red);
                 // Flagg
@@ -140,7 +140,7 @@ void render_board(void) {
                 fill_rect(fx+1, fy, 2, 3, red);
             } else if (state_grid[r][c] == REVEALED) {
                 if (mine_grid[r][c]) {
-                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
+                    fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, white);
                     //Mine
                     int cx = x0 + CELL_SIZE/2;
                     int cy = y0 + CELL_SIZE/2;
