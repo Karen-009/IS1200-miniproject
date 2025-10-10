@@ -1,7 +1,7 @@
 # Overview 
 This project uses the DE10-Lite FPGA board with switches (SW0-SW9) and KEY1 for navigating through the game. The control mapping for movement and main actions are consistent in both Sudoku and Minesweeper. For movement, the player toggles the switch (on/off), then presses KEY1 to perform the action. Game-specific buttons/switches are: SW8 and SW9. 
 
-# Compiling and Runing the Code
+# Compiling and Running the Code
 To compiler the code. Add all the files to the same directory and navigate to that directory in your terminal. Connect the screen to the DE10_Lite board with a VGA. Using DTEK-tool kit, run: make and then run dtekv-run main.bin.
 
 # Menu Navigation
