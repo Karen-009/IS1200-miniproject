@@ -1,7 +1,7 @@
 // Zunjee, sudoku puzzles implementation file
 #include "sudoku_puzzles.h" 
 
-// A sample solved Sudoku grid
+// A sample solved Sudoku grid, used as a base for generating puzzles
 const int solved_grid[9][9] = {
     {5, 3, 4, 6, 7, 8, 9, 1, 2},
     {6, 7, 2, 1, 9, 5, 3, 4, 8},

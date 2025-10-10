@@ -6,16 +6,16 @@
 #include <string.h> // For memset (used to set a block of memory to a specific value, typically zero)
 #include "dtekv_board.h"
 
-// shuffle function to randomize puzzle selection
+// shuffle function to randomize puzzle selection, row/column swaps, and number permutations
 void swap_rows(int grid[9][9], int row1, int row2) {  
-    for (int col = 0; col < 9; col++) {
-        int temp = grid[row1][col];
-        grid[row1][col] = grid[row2][col];
+    for (int col = 0; col < 9; col++) { 
+        int temp = grid[row1][col]; 
+        grid[row1][col] = grid[row2][col]; 
         grid[row2][col] = temp; 
     }
 }
 
-// Function to swap columns
+// Function to swap columns, used in shuffling the grid
 void swap_cols(int grid[9][9], int col1, int col2) { 
     for (int row = 0; row < 9; row++) {
         int temp = grid[row][col1];
@@ -24,7 +24,7 @@ void swap_cols(int grid[9][9], int col1, int col2) {
     }
 }
 
-// Function to shuffle rows within each band (set of 3 rows)
+// Function to shuffle rows within each band (set of 3 rows), used in generating puzzles
 void shuffle_rows(int grid[9][9]) { 
     for (int band = 0; band < 3; band++) {
         int base = band * 3;
@@ -35,7 +35,7 @@ void shuffle_rows(int grid[9][9]) {
     }
 }
 
-// Function to shuffle columns within each stack (set of 3 columns)
+// Function to shuffle columns within each stack (set of 3 columns), used in generating puzzles
 void shuffle_cols(int grid[9][9]) { 
     for (int stack = 0; stack < 3; stack++) {
         int base = stack * 3;
@@ -48,17 +48,17 @@ void shuffle_cols(int grid[9][9]) {
 
 // Function to permute numbers in the grid, maps 1-9 to a random permutation of 1-9
 void permute_numbers(int grid[9][9]) {
-    int map[10] = {0};
-    for (int i = 1; i <= 9; i++) map[i] = i;
-    for (int i = 1; i <= 9; i++) {
-        int j = 1 + rand() % 9;
-        int tmp = map[i];
+    int map[10] = {0};  // map[0] unused, map[1-9] will hold the permutation
+    for (int i = 1; i <= 9; i++) map[i] = i;    // Initialize map to identity
+    for (int i = 1; i <= 9; i++) {  // Shuffle the map array 
+        int j = 1 + rand() % 9; 
+        int tmp = map[i];   
         map[i] = map[j];
         map[j] = tmp;
     }
-    for (int r = 0; r < 9; r++)
-        for (int c = 0; c < 9; c++)
-            grid[r][c] = map[grid[r][c]];
+    for (int r = 0; r < 9; r++) // Apply the permutation to the grid
+        for (int c = 0; c < 9; c++)       // Replace each number with its mapped value
+            grid[r][c] = map[grid[r][c]];   // 1-9 are permuted
 }
 
 
@@ -82,8 +82,6 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     game->state = GAME_RUNNING; // Set initial game state to running
     game->selected_row = 0;     // Start with the first cell selected, top-left corner
     game->selected_col = 0;
-
-    //srand(time(NULL)); // Seed the random number generator
 
     int puzzle[9][9];   // Temporary puzzle grid
     memcpy(puzzle, solved_grid, sizeof(solved_grid)); // Start with a solved grid
@@ -115,7 +113,7 @@ void sudoku_init(SudokuGame *game, SudokuDifficulty difficulty) {
     }
 }
 
-// Function to check if the player has won or lost
+// Function to check if the player has won or lost, returns 1 if won, 0 otherwise
 int sudoku_check_win(SudokuGame *game) {
     int row, col;
     int filled = 1;

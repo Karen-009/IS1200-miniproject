@@ -1,4 +1,4 @@
-// Minimal implementations of standard library functions for embedded systems
+// Minimal implementations of standard library functions for embedded systems since we can't use the full libc
 #include <stdint.h>
 
 static unsigned int seed = 1;

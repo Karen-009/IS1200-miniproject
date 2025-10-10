@@ -9,7 +9,7 @@
 
 // VGA Memory Addresses extern because they are defined in sudoku_vga.c
 extern volatile char *VGA;  
-extern volatile int  *VGA_ctrl;
+extern volatile int  *VGA_ctrl; 
 extern volatile int  *SWITCHES;
 extern volatile int  *keys1;
 
@@ -23,24 +23,24 @@ int font_index(char c) {
     return 0; 
 }
 
-void draw_char(int x, int y, char c, unsigned char color) {
-    if (c < 'A' || c > 'Z') return;
+void draw_char(int x, int y, char c, unsigned char color) {    // Draw a single character at (x, y)
+    if (c < 'A' || c > 'Z') return;     
 
-    int index = font_index(c);
-    for (int row = 0; row < 8; row++) {
-        unsigned char row_data = font8x8_AZ[index][row];
-        for (int col = 0; col < 8; ++col) {
+    int index = font_index(c);     // Get index in font array
+    for (int row = 0; row < 8; row++) {   // Each character is 8 pixels tall
+        unsigned char row_data = font8x8_AZ[index][row];    // Get bitmap for this row
+        for (int col = 0; col < 8; ++col) {     // Each character is 8 pixels wide
             if (row_data & (1 << (7 - col))) { // Check if the bit is set
-                draw_pixel(x + col, y + row, color);
+                draw_pixel(x + col, y + row, color);    // Draw pixel if bit is 1
             }
         }
     }
 }
 
 // Draw a text string at (x, y)
-void draw_text(int x, int y, const char *text, unsigned char color) {
-    while (*text) {
-        if (*text == ' ') {
+void draw_text(int x, int y, const char *text, unsigned char color) {   // Draw text string starting at (x, y)
+    while (*text) {    
+        if (*text == ' ') {     
             x += 8; // Space width
         } else {
             draw_char(x, y, *text, color);
@@ -61,7 +61,6 @@ void draw_main_menu(int selection) {
     // Clear screen with background color
     draw_rect(0, 0, 320, 240, light_blue);
 
-    
     // Draw selection box
     int box_y = 100 + (selection * 60);
     draw_rect(80, box_y, 160, 40, yellow);
@@ -86,8 +85,8 @@ int handle_menu_input(void) {
     int current_switches = *SWITCHES;
     int current_keys     = *keys1;
 
-    static int last_switches;
-    static int last_keys;
+    static int last_switches;   // For edge detection
+    static int last_keys;      
     static int seeded = 0;
 
     // Seed previous state on first call to avoid a false/missed edge
@@ -99,9 +98,9 @@ int handle_menu_input(void) {
 
     // SW0 selects which game is highlighted
     if (current_switches & (1 << SW_SELECT_GAME)) {
-        game_selection = MENU_SUDOKU;
+        game_selection = MENU_SUDOKU;   // SW0 = 1 selects Sudoku
     } else {
-        game_selection = MENU_MINEWEEPER;
+        game_selection = MENU_MINEWEEPER;   // SW0 = 0 selects Minesweeper
     }
 
     // KEY1 (KEY_enter) is active-low: pressed = 0, released = 1 
@@ -110,22 +109,22 @@ int handle_menu_input(void) {
         int curr_bit = (current_keys >> KEY_enter) & 1;
         int press_edge = (prev_bit == 1) && (curr_bit == 0);
 
-        if (press_edge) {
-            last_switches = current_switches;
-            last_keys     = current_keys;
+        if (press_edge) {      // On KEY1 press
+            last_switches = current_switches;   // Update previous state in order to avoid multi-fire
+            last_keys     = current_keys;       
 
             if (game_selection == MENU_MINEWEEPER) {
-                return MENU_STATE_MINEWEEPER;
+                return MENU_STATE_MINEWEEPER;   // Start minesweeper
             } else {
-                return MENU_STATE_SUDOKU;
+                return MENU_STATE_SUDOKU;       // Start sudoku
             }
         }
     }
 
-    last_switches = current_switches;
+    last_switches = current_switches;  
     last_keys     = current_keys;
 
-    return MENU_STATE_MAIN;
+    return MENU_STATE_MAIN; 
 }
 
 void run_minesweeper(void) {
@@ -136,47 +135,47 @@ void run_minesweeper(void) {
 void run_sudoku(void) {
     SudokuGame game;
 
-    volatile int *keys = (volatile int *) KEY1_base;
-    volatile int *SWITCHES = (volatile int *) SWITCH_base;
-    const int KEY_MASK = (1 << KEY_enter);  
+    volatile int *keys = (volatile int *) KEY1_base;    
+    volatile int *SWITCHES = (volatile int *) SWITCH_base;  
+    const int KEY_MASK = (1 << KEY_enter);  // KEY1 mask, active-low
     int prev_keys = *keys;                  
-    unsigned seed = 0x6D2B79F5u;
+    unsigned seed = 0x6D2B79F5u;    // Initial arbitrary seed for RNG, will be mixed with entropy
 
-    while (1) {
-        int curr = *keys;
+    while (1) { // Wait for KEY1 press to start
+        int curr = *keys;   // Current key state
 
-        // Entropy for RNG
-        seed ^= (seed << 13);
+        // Entropy for RNG seeding, ensures different puzzle each time 
+        seed ^= (seed << 13);   
         seed ^= (seed >> 17);
         seed ^= (seed << 5);
         seed ^= (unsigned)curr;
-        seed ^= ((unsigned)SWITCHES << 16);
+        seed ^= ((unsigned)SWITCHES << 16); 
 
         // KEY1 edge detection (active-low)
-        int was_pressed = !(prev_keys & KEY_MASK);
-        int is_pressed  = !(curr      & KEY_MASK);
-        int key1_press_edge = (!was_pressed && is_pressed);
+        int was_pressed = !(prev_keys & KEY_MASK);  // Previously pressed
+        int is_pressed  = !(curr      & KEY_MASK);  // Currently pressed
+        int key1_press_edge = (!was_pressed && is_pressed); // Rising edge detection
 
-        if (key1_press_edge) {
-            prev_keys = curr;
+        if (key1_press_edge) {      // On KEY1 press
+            prev_keys = curr;       // Update previous state
             break; 
         }
-        prev_keys = curr;
-        delay(5); 
+        prev_keys = curr;   // Update previous state
+        delay(5);     
     }
 
-    // Seed RNG here so each Sudoku launch is fresh/random
-    srand(seed);
+    // Seed RNG here so each Sudoku game is random 
+    srand(seed); 
 
     // Difficulty selection
-    SudokuDifficulty difficulty = get_selected_difficulty_from_switches();
-    sudoku_init(&game, difficulty);
+    SudokuDifficulty difficulty = get_selected_difficulty_from_switches();  // Read switches to get difficulty
+    sudoku_init(&game, difficulty); // Initialize game state
 
     // Initial draw
     sudoku_render_vga(&game);
 
-    // Track visible state to avoid unnecessary redraws
-    uint32_t last_sig =
+    // Track visible state to avoid unnecessary redraws, only redraw on changes 
+    uint32_t last_sig = // Pack key state and game state into a single integer, used to detect changes
         (uint32_t)game.selected_col |
         ((uint32_t)game.selected_row << 8) |
         ((uint32_t)game.state        << 16);
@@ -199,22 +198,22 @@ void run_sudoku(void) {
 
     // Only check for win/loss after the user submits (KEY1) and board is full
     if (sudoku_is_full(&game) && game.state == GAME_RUNNING) {
-        sudoku_render_vga(&game); 
+        sudoku_render_vga(&game); // Redraw to show full board
 
         // Wait for KEY1 press
         int prev_keys = *keys;
-        while (1) {
+        while (1) { 
             int curr_keys = *keys;
-            int was_pressed = !(prev_keys & KEY_MASK);
-            int is_pressed  = !(curr_keys & KEY_MASK);
-            int key1_press_edge = (!was_pressed && is_pressed);
+            int was_pressed = !(prev_keys & KEY_MASK);      // Previously pressed
+            int is_pressed  = !(curr_keys & KEY_MASK);      // Currently pressed
+            int key1_press_edge = (!was_pressed && is_pressed); // Rising edge detection
 
-            if (key1_press_edge) {
+            if (key1_press_edge) {  // On KEY1 press
                 sudoku_check_win(&game); // Now check for win/loss
-                needs_redraw = 1;
-                break;
+                needs_redraw = 1;       // Redraw to show win/loss state
+                break;  
             }
-            prev_keys = curr_keys;
+            prev_keys = curr_keys;  
             delay(1);
         }
     }
@@ -224,7 +223,7 @@ void run_sudoku(void) {
     }
 
     // Wait for KEY1 to return to menu after win/loss
-    if ((game.state == GAME_WON || game.state == GAME_LOST)) {
+    if ((game.state == GAME_WON || game.state == GAME_LOST)) { 
         int prev_keys = *keys;
         while (1) {
             int curr_keys = *keys;
@@ -245,7 +244,7 @@ void run_sudoku(void) {
 }
 }
 
-void delay(int ms){
+void delay(int ms){ // Simple busy-wait delay
     volatile int i, j;
     for (i = 0; i < ms * 10000; i++)
     {
@@ -253,7 +252,7 @@ void delay(int ms){
     }
 }
 
-void test(void) {
+void test(void) { 
 }
 
 SudokuDifficulty get_selected_difficulty_from_switches(void) {

@@ -1,3 +1,4 @@
+// Zunjee, header file for VGA drawing functions for Sudoku game
 #ifndef SUDOKU_VGA_H
 #define SUDOKU_VGA_H
 #include "sudoku.h"

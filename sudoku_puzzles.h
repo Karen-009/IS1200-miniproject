@@ -2,6 +2,6 @@
 #ifndef SUDOKU_PUZZLES_H
 #define SUDOKU_PUZZLES_H
 
-extern const int solved_grid[9][9]; // A sample solved Sudoku grid
+extern const int solved_grid[9][9]; // declaration of a sample solved Sudoku grid
 
 #endif
