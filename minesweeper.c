@@ -30,7 +30,7 @@ int cursor_r = 0, cursor_c = 0;
 static const LevelSpec LEVELS[3] = {
     {9, 9, 10}, //Easy
     {16, 12, 30}, //Medium
-    {24, 16, 70} //Hard
+    {20, 16, 70} //Hard
 };
 
 
