@@ -136,7 +136,7 @@ void render_board(void) {
             if (state_grid[r][c] == HIDDEN) {
                 fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, light_gray);
             } else if (state_grid[r][c] == FLAGGED) {
-                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, red);
+                fill_rect(x0 + 1, y0 + 1, CELL_SIZE - 2, CELL_SIZE - 2, gray);
                 // Flagg
                 int fx = x0 + (CELL_SIZE - 3) / 2;
                 int fy = y0 + (CELL_SIZE - 5) / 2;
